@@ -1,6 +1,6 @@
-# Empty Robot
+# [FRC-2024] Crescendo 
 
-Sample code used to create new repositories
+
 
 ---
 
