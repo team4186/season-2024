@@ -9,13 +9,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase
 
 class DriveTrainSubsystem(
     val leftMotor: CANSparkMax = driveSparkMaxMotors(
-        CANSparkMax(14, CANSparkLowLevel.MotorType.kBrushless),
-        CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless),
+        CANSparkMax(8, CANSparkLowLevel.MotorType.kBrushless),
+        CANSparkMax(9, CANSparkLowLevel.MotorType.kBrushless),
         inverted = true,
     ),
     val rightMotor: CANSparkMax = driveSparkMaxMotors(
-        CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushless),
-        CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushless),
+        CANSparkMax(11, CANSparkLowLevel.MotorType.kBrushless),
+        CANSparkMax(10, CANSparkLowLevel.MotorType.kBrushless),
         inverted = false,
     ),
 ) : SubsystemBase() {

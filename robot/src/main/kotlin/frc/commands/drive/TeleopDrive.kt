@@ -1,7 +1,6 @@
 package frc.commands.drive
 
 import edu.wpi.first.wpilibj2.command.Command
-import frc.subsystems.DriveTrainSubsystem
 import kotlin.math.absoluteValue
 import kotlin.math.pow
 import kotlin.math.withSign
@@ -10,13 +9,11 @@ class TeleopDrive(
     private val inputTurn: () -> Double,
     private val inputThrottle: () -> Double,
     private val inputYaw: () -> Double,
+    private val drive: (forward: Double, side: Double, turn: Double) -> Unit,
+    private val stop: () -> Unit,
     private val shouldAttenuate: () -> Boolean = { true },
     private val forward: () -> Double = { -1.0 },
-    private val drive: DriveTrainSubsystem
 ) : Command() {
-    init {
-        addRequirements(drive)
-    }
 
     override fun execute() {
         val throttle: Double
@@ -28,19 +25,14 @@ class TeleopDrive(
             strafe = attenuated(-inputYaw())
         } else {
             throttle = full(forward() * inputThrottle())
-            turn = full(-inputTurn()).coerceIn(-0.4, 0.4)
+            turn = full(-inputTurn())
             strafe = full(-inputYaw())
         }
-        drive.holonomic(
-            forward = -throttle,
-            turn = turn,
-            strafe = -strafe,
-            squareInputs = false
-        )
+        drive(-throttle, -strafe, turn)
     }
 
     override fun end(interrupted: Boolean) {
-        drive.stop()
+        stop()
     }
 
     private fun full(value: Double): Double {
