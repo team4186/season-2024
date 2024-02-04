@@ -2,6 +2,8 @@ package frc.robot
 
 import com.revrobotics.CANSparkLowLevel
 import com.revrobotics.CANSparkMax
+import edu.wpi.first.wpilibj.AddressableLED
+import edu.wpi.first.wpilibj.AddressableLEDBuffer
 import edu.wpi.first.wpilibj.Joystick
 import edu.wpi.first.wpilibj.TimedRobot
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
@@ -10,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.CommandScheduler
 import frc.commands.drive.TeleopDrive
 import frc.subsystems.DriveTrainSubsystem
+import frc.vision.LimelightRunner
 
 class Robot : TimedRobot() {
     private enum class DriveMode {
@@ -19,19 +22,20 @@ class Robot : TimedRobot() {
 
     private val joystick0 = Joystick(0) //drive joystick
 
+    val ledBuffer = AddressableLEDBuffer(10)
+    val led = AddressableLED (9).apply{
+        setLength(ledBuffer.length)
+        setData(ledBuffer);
+    }
 
-//    val ledBuffer = AddressableLEDBuffer(100)
-//    val led = AddressableLED(9).apply {
-//        setLength(ledBuffer.length)
-//        setData(ledBuffer);
-//    }
-
-    private val driveTrainSubsystem = DriveTrainSubsystem()
+    //private val driveTrainSubsystem = DriveTrainSubsystem()
     //private val compressor = Compressor(0, PneumaticsModuleType.CTREPCM)
+
+    private val limelightRunner = LimelightRunner()
 
     private val autonomousChooser = SendableChooser<Command>()
     private val driveModeChooser = SendableChooser<DriveMode>()
-
+/*
     private val rawDrive = TeleopDrive(
         inputThrottle = { joystick0.y },
         inputTurn = { joystick0.twist },
@@ -39,10 +43,10 @@ class Robot : TimedRobot() {
         drive = { forward, _, turn -> driveTrainSubsystem.arcade(forward, turn, squareInputs = true) },
         stop = { driveTrainSubsystem.stop() }
     )
-
+*/
     override fun robotInit() {
 
-        //led.start();
+        led.start()
 
         //driveTrainSubsystem.initialize()
 //        compressor.enableDigital()
@@ -60,7 +64,7 @@ class Robot : TimedRobot() {
     }
 
 
-    var frame = 0
+    //var frame = 0
     override fun robotPeriodic() {
         CommandScheduler.getInstance().run()
         /*
@@ -73,10 +77,18 @@ class Robot : TimedRobot() {
                     }
                 }
 
-                led.setData(ledBuffer)
-                */
+         */
+        repeat(ledBuffer.length) {
+            ledBuffer.setRGB(it, 200, 0, 0)
+            //println("It's reaching the LEDs")
+        }
 
-        frame++
+        led.setData(ledBuffer)
+
+        limelightRunner.test()
+
+
+        //frame++
     }
 
     override fun autonomousInit() {
@@ -93,25 +105,28 @@ class Robot : TimedRobot() {
     }
 
     override fun teleopInit() {
-        driveTrainSubsystem.setToCoast()
-        rawDrive.schedule()
+        //driveTrainSubsystem.setToCoast()
+        //rawDrive.schedule()
     }
 
-    val motor0: CANSparkMax = CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless)
-    val motor1: CANSparkMax = CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless)
-    val motor2: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
+    //val motor0: CANSparkMax = CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless)
+    //val motor1: CANSparkMax = CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless)
+    //val motor2: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
 
     override fun teleopPeriodic() {
-        motor0.set(0.75)
-        motor1.set(0.75)
-        motor2.set(0.75)
+        //motor0.set(0.75)
+        //motor1.set(0.75)
+        //motor2.set(0.75)
     }
 
     override fun teleopExit() {
-        driveTrainSubsystem.setToBreak()
+        //driveTrainSubsystem.setToBreak()
         CommandScheduler.getInstance().cancelAll()
     }
 
     override fun testInit() {
+    }
+
+    override fun disabledPeriodic() {
     }
 }

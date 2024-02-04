@@ -6,24 +6,41 @@ import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 
 class LimelightRunner(
-    private val table: NetworkTable = NetworkTableInstance.getDefault().getTable("limelight")
+    private val tableRing: NetworkTable = NetworkTableInstance.getDefault().getTable("limelight-ring"),
+    private val tableTag: NetworkTable = NetworkTableInstance.getDefault().getTable("limelight-tag")
 ) {
     fun periodic() {
-        SmartDashboard.putBoolean("Has Target?", hasTarget)
+        SmartDashboard.putBoolean("Has Target Ring?", hasTargetRing)
+        SmartDashboard.putBoolean("Has Target Tag?", hasTargetTag)
         SmartDashboard.putNumber("X Offset", xOffset)
         //SmartDashboard.putNumber("Y Offset", yOffset)
         SmartDashboard.putNumber("% of Image", tagArea)
         SmartDashboard.putNumber("Distance", Units.metersToInches(distance))
     }
 
-    val hasTarget: Boolean
-        get() {
-            return table.getEntry("tv").getDouble(0.0) > 0.0
+    fun test() {
+        if(hasTargetRing) {
+            println("Has Ring")
         }
 
-    val xOffset: Double get() = table.getEntry("tx").getDouble(0.0)
-    val yOffset: Double get() = table.getEntry("ty").getDouble(0.0)
-    val tagArea: Double get() = table.getEntry("ta").getDouble(0.0)
+        if(hasTargetTag) {
+            println("Has Tag")
+        }
+    }
+
+    val hasTargetRing: Boolean
+        get() {
+            return tableRing.getEntry("tv").getDouble(0.0) > 0.0
+        }
+
+    val hasTargetTag: Boolean
+        get() {
+            return tableTag.getEntry("tv").getDouble(0.0) > 0.0
+        }
+
+    val xOffset: Double get() = tableRing.getEntry("tx").getDouble(0.0)
+    val yOffset: Double get() = tableRing.getEntry("ty").getDouble(0.0)
+    val tagArea: Double get() = tableRing.getEntry("ta").getDouble(0.0)
 
     val distance: Double
         get() {
@@ -31,7 +48,7 @@ class LimelightRunner(
             //at this target distance, the targetArea is 0.038 (3.8%) rough estimate needs adjusting
             val distance = targetDistance * tagArea / 0.038
 
-            return if (hasTarget) distance else Double.NaN
+            return if (hasTargetRing) distance else Double.NaN
         }
 
     //Subject to change
@@ -51,6 +68,6 @@ class LimelightRunner(
 
 
     fun setLight(mode: Boolean) {
-        table.getEntry("ledMode").setValue(if (mode) 3.0 else 1.0)
+        tableRing.getEntry("ledMode").setValue(if (mode) 3.0 else 1.0)
     }
 }
