@@ -79,10 +79,11 @@ dependencies {
 
     wpi.sim.enableRelease().forEach { simulationRelease(it) }
 
-    testImplementation(platform("io.kotest:kotest-bom:5.8.0"))
-    testImplementation("io.kotest:kotest-runner-junit5")
-    testImplementation("io.kotest:kotest-assertions-core")
-    testImplementation("io.mockk:mockk:1.13.9")
+    testImplementation(kotlin("test"))
+    testImplementation(platform("org.junit:junit-bom:5.10.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("io.mockk:mockk:+")
 }
 
 tasks {

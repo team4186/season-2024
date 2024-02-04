@@ -19,13 +19,13 @@ class Robot : TimedRobot() {
 
     private val joystick0 = Joystick(0) //drive joystick
 
-    /*
-        val ledBuffer = AddressableLEDBuffer(100)
-        val led = AddressableLED (9).apply{
-            setLength(ledBuffer.length)
-            setData(ledBuffer);
-        }
-    */
+
+//    val ledBuffer = AddressableLEDBuffer(100)
+//    val led = AddressableLED(9).apply {
+//        setLength(ledBuffer.length)
+//        setData(ledBuffer);
+//    }
+
     private val driveTrainSubsystem = DriveTrainSubsystem()
     //private val compressor = Compressor(0, PneumaticsModuleType.CTREPCM)
 
