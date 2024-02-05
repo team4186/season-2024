@@ -72,6 +72,18 @@ Read the manuals!
 * [Overview](https://docs.wpilib.org/en/stable/docs/yearly-overview/index.html)
 * [Control Systems Basics](https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/control-system-basics.html)
 
+### Git Process
+
+At the beginning of meetings AND before any new commits to main, pull main from remote repository (blue arrow)
+
+![git-options.png](docs/images/git-options.png)
+
+If code is finished and ready for remote repository: commit and push
+
+If code is not done yet, create a new branch
+
+![git-new-branch.png](docs/images/git-new-branch.png)
+
 ### Architecture
 
 [Robot.kt](robot/src/main/kotlin/frc/robot/Robot.kt) is the entry point.
