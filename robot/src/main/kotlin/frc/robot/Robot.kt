@@ -11,41 +11,60 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler
 import frc.commands.drive.TeleopDrive
 import frc.subsystems.DriveTrainSubsystem
 import frc.vision.LimelightRunner
+import kotlin.math.absoluteValue
 
 class Robot : TimedRobot() {
-    private enum class DriveMode {
-        Raw,
-        Cheesy
-    }
-
     private val joystick0 = Joystick(0) //drive joystick
 
-
-    val ledBuffer = AddressableLEDBuffer(10)
-    val led = AddressableLED(9).apply {
+    private val ledBuffer = AddressableLEDBuffer(10)
+    private val led = AddressableLED(9).apply {
         setLength(ledBuffer.length)
-        setData(ledBuffer);
+        setData(ledBuffer)
     }
 
-    val digitalInput = DigitalInput(9)
+    // TODO set the channels and device ids
+    private val launcherLeftArmLow = DigitalInput(0)
+    private val launcherRightArmLow = DigitalInput(1)
+    private val launcherArmEncoderLeft = DutyCycleEncoder(2)
+    private val launcherArmEncoderRight = DutyCycleEncoder(4)
+    private val launcherArmLeft = CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushless)
+        .apply {
+            setIdleMode(CANSparkBase.IdleMode.kBrake)
+            // TODO find the conversion factor
+            encoder.setPositionConversionFactor(1.0)
 
-    val exhaustU: CANSparkMax = CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless).apply {
-        setIdleMode(CANSparkBase.IdleMode.kCoast)
-        pidController.i = 0.0000033
-    }
-    val exhaustL: CANSparkMax = CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless).apply {
-        setIdleMode(CANSparkBase.IdleMode.kCoast)
-        follow(exhaustU)
-    }
-    val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
+            // TODO find if the encoder and motor needs to be inverted
+        }
+    // TODO find if it can be handled as a follower of launcherArmLeft
+    private val launcherArmRight = CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushless)
+        .apply {
+            setIdleMode(CANSparkBase.IdleMode.kBrake)
+            // TODO find the conversion factor
+            encoder.setPositionConversionFactor(1.0)
+            // TODO find if the encoder and motor needs to be inverted
+        }
 
-    val driveTrainSubsystem = DriveTrainSubsystem()
-    private val compressor = Compressor(0, PneumaticsModuleType.CTREPCM)
+
+    private val intakeSlot = DigitalInput(4)
+    private val launcher = CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless)
+        .also { lead ->
+            with(CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless)) {
+                setIdleMode(CANSparkBase.IdleMode.kCoast)
+                follow(lead)
+            }
+        }
+        .apply {
+            setIdleMode(CANSparkBase.IdleMode.kCoast)
+            pidController.i = 0.0000033
+        }
+
+    private val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
+
+    private val driveTrainSubsystem = DriveTrainSubsystem()
 
     private val limelightRunner = LimelightRunner()
 
     private val autonomousChooser = SendableChooser<Command>()
-    private val driveModeChooser = SendableChooser<DriveMode>()
 
     private val rawDrive = TeleopDrive(
         inputThrottle = { joystick0.y },
@@ -55,53 +74,20 @@ class Robot : TimedRobot() {
         stop = { driveTrainSubsystem.stop() }
     )
 
-    private val limeLightRunner = LimelightRunner()
-
-
     override fun robotInit() {
-
         led.start()
 
         driveTrainSubsystem.initialize()
-        compressor.enableDigital()
 
         with(autonomousChooser) {
             setDefaultOption("Nothing", null)
             SmartDashboard.putData("Autonomous Mode", this)
         }
-
-        with(driveModeChooser) {
-            setDefaultOption("Raw", DriveMode.Raw)
-            addOption("Cheesy", DriveMode.Cheesy)
-            SmartDashboard.putData("Drive Mode", this)
-        }
     }
 
 
-    //var frame = 0
     override fun robotPeriodic() {
         CommandScheduler.getInstance().run()
-
-        /*
-                when {
-                    (frame % 50 == 0) && ((frame / 50) % 2 == 0) -> repeat(ledBuffer.length) {
-                        ledBuffer.setRGB(it, 0, 0, 255)
-                    }
-                    (frame % 50 == 0) && ((frame / 50) % 2 != 0) -> repeat(ledBuffer.length) {
-                        ledBuffer.setRGB(it, 255, 0, 0)
-                    }
-                }
-
-         */
-
-        repeat(ledBuffer.length) {
-            ledBuffer.setRGB(it, 200, 0, 0)
-            //println("It's reaching the LEDs")
-        }
-
-        led.setData(ledBuffer)
-
-        //frame++
     }
 
     override fun autonomousInit() {
@@ -120,49 +106,87 @@ class Robot : TimedRobot() {
     override fun teleopInit() {
         driveTrainSubsystem.setToCoast()
         rawDrive.schedule()
+        // resetArm()
     }
 
-    val targetSpeed = -5000 * 0.6
-    var frame = 0
+    private val targetSpeed = -5000 * 0.6
     override fun teleopPeriodic() {
+        SmartDashboard.putNumber("Launcher Speed", launcher.encoder.velocity)
+        SmartDashboard.putNumber("Left Arm Encoder", launcherArmEncoderLeft.run { absolutePosition - positionOffset })
+        SmartDashboard.putNumber("Right Arm Encoder", launcherArmEncoderRight.run { absolutePosition - positionOffset })
+        SmartDashboard.putNumber("Left Arm Motor Encoder", launcherArmLeft.encoder.position)
+        SmartDashboard.putNumber("Right Arm Motor Encoder", launcherArmRight.encoder.position)
 
-        if(!digitalInput.get()) {
-            if(joystick0.getRawButton(1)) {
-                exhaustU.pidController.setReference(targetSpeed, CANSparkBase.ControlType.kVelocity)
-                println(exhaustU.encoder.velocity)
-                if(exhaustU.encoder.velocity <= targetSpeed) {
-                    frame++
-                    if(frame >= 5)
-                    {
-                        intake.set(-0.75)
-                    }
-                } else {
-                    frame = 0
-                }
-            } else {
-                intake.set(0.0)
-            }
-        } else {
-            if(joystick0.getRawButton(2)) {
-                intake.set(-0.5)
-                exhaustU.set(0.0)
-            } else {
-                intake.set(0.0)
-                exhaustU.set(0.0)
+        when {
+            joystick0.getRawButton(1) -> launch(targetSpeed)
+            joystick0.getRawButton(2) -> collect()
+            joystick0.getRawButton(3) -> resetArm()
+            else -> {
+                intake.stopMotor()
+                launcher.stopMotor()
             }
         }
 
-//        println("Teleop")
-        if(limelightRunner.hasTargetRing) {
-            println("Has target")
-            if(limelightRunner.xOffset > 0) {
-                driveTrainSubsystem.arcade(0.0, 0.3, false)
-            } else if(limelightRunner.xOffset < 0) {
-                driveTrainSubsystem.arcade(0.0, -0.3, false)
+        if (limelightRunner.hasTargetRing) {
+            if (limelightRunner.xOffset > 0) {
+                repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) }
+//                driveTrainSubsystem.arcade(0.0, 0.3, false)
+            } else if (limelightRunner.xOffset < 0) {
+                repeat(ledBuffer.length) { ledBuffer.setRGB(it, 200, 0, 0) }
+//                driveTrainSubsystem.arcade(0.0, -0.3, false)
             }
         } else {
-            //println("Does not has target")
-            driveTrainSubsystem.stop()
+            repeat(ledBuffer.length) { ledBuffer.setRGB(it, 200, 0, 0) }
+//            driveTrainSubsystem.stop()
+        }
+        led.setData(ledBuffer)
+    }
+
+    private var launchPostAccelerationDelay = 0
+    private fun launch(speed: Double) {
+        if (!intakeSlot.get()) {
+            launcher.pidController.setReference(speed, CANSparkBase.ControlType.kVelocity)
+            if (launcher.encoder.velocity.absoluteValue >= speed.absoluteValue) {
+                launchPostAccelerationDelay++
+                if (launchPostAccelerationDelay >= 5) {
+                    intake.set(-0.75)
+                }
+            } else {
+                launchPostAccelerationDelay = 0
+            }
+        } else {
+            launcher.stopMotor()
+            intake.stopMotor()
+        }
+    }
+
+    private fun collect() {
+        if (intakeSlot.get()) {
+            intake.set(-0.5)
+        } else {
+            intake.stopMotor()
+        }
+    }
+
+    private fun resetArm() {
+        // TODO find correct speed to run the arm towards zero
+        // TODO find if the limit switch is open by default
+
+        when {
+            launcherLeftArmLow.get() -> launcherArmLeft.set(-0.3)
+            else -> {
+                launcherArmLeft.encoder.setPosition(0.0)
+                launcherArmEncoderLeft.reset()
+            }
+        }
+
+        when {
+            launcherRightArmLow.get() -> launcherArmRight.set(-0.3)
+            else -> {
+                launcherArmRight.encoder.setPosition(0.0)
+                launcherArmEncoderRight.reset()
+            }
+
         }
     }
 
