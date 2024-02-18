@@ -14,20 +14,30 @@ import frc.vision.LimelightRunner
 import kotlin.math.absoluteValue
 
 class Robot : TimedRobot() {
-    private val joystick0 = Joystick(0) //drive joystick
-
-    private val ledBuffer = AddressableLEDBuffer(10)
+//    private val joystick0 = Joystick(0) //drive joystick
+/*
+    private val ledBuffer = AddressableLEDBuffer(20)
     private val led = AddressableLED(9).apply {
         setLength(ledBuffer.length)
         setData(ledBuffer)
     }
 
+ */
+
     // TODO set the channels and device ids
-    private val launcherLeftArmLow = DigitalInput(0)
-    private val launcherRightArmLow = DigitalInput(1)
-    private val launcherArmEncoderLeft = DutyCycleEncoder(2)
-    private val launcherArmEncoderRight = DutyCycleEncoder(4)
-    private val launcherArmLeft = CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushless)
+
+//    private val launcherLeftArmLow = DigitalInput(0)
+//    private val launcherRightArmLow = DigitalInput(1)
+//    private val launcherArmEncoderLeft = DutyCycleEncoder(2)
+//    private val launcherArmEncoderRight = DutyCycleEncoder(4)
+    private val launcherArmMotors = CANSparkMax(20, CANSparkLowLevel.MotorType.kBrushless)
+        .also { lead ->
+            with(CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless)) {
+                setIdleMode(CANSparkBase.IdleMode.kCoast)
+                encoder.setPositionConversionFactor(1.0)
+                follow(lead, true)
+            }
+        }
         .apply {
             setIdleMode(CANSparkBase.IdleMode.kBrake)
             // TODO find the conversion factor
@@ -35,8 +45,9 @@ class Robot : TimedRobot() {
 
             // TODO find if the encoder and motor needs to be inverted
         }
+    /*
     // TODO find if it can be handled as a follower of launcherArmLeft
-    private val launcherArmRight = CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushless)
+    private val launcherArmRight = CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless)
         .apply {
             setIdleMode(CANSparkBase.IdleMode.kBrake)
             // TODO find the conversion factor
@@ -44,6 +55,9 @@ class Robot : TimedRobot() {
             // TODO find if the encoder and motor needs to be inverted
         }
 
+
+     */
+/*
 
     private val intakeSlot = DigitalInput(4)
     private val launcher = CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless)
@@ -58,14 +72,16 @@ class Robot : TimedRobot() {
             pidController.i = 0.0000033
         }
 
-    private val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
+     */
 
-    private val driveTrainSubsystem = DriveTrainSubsystem()
+//    private val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
+
+//    private val driveTrainSubsystem = DriveTrainSubsystem()
 
     private val limelightRunner = LimelightRunner()
 
     private val autonomousChooser = SendableChooser<Command>()
-
+/*
     private val rawDrive = TeleopDrive(
         inputThrottle = { joystick0.y },
         inputTurn = { joystick0.twist },
@@ -73,11 +89,11 @@ class Robot : TimedRobot() {
         drive = { forward, _, turn -> driveTrainSubsystem.arcade(forward, turn, squareInputs = true) },
         stop = { driveTrainSubsystem.stop() }
     )
-
+*/
     override fun robotInit() {
-        led.start()
+//        led.start()
 
-        driveTrainSubsystem.initialize()
+//        driveTrainSubsystem.initialize()
 
         with(autonomousChooser) {
             setDefaultOption("Nothing", null)
@@ -91,7 +107,7 @@ class Robot : TimedRobot() {
     }
 
     override fun autonomousInit() {
-        driveTrainSubsystem.setToBreak()
+//        driveTrainSubsystem.setToBreak()
         val autonomous = autonomousChooser.selected
         autonomous?.schedule()
     }
@@ -104,30 +120,37 @@ class Robot : TimedRobot() {
     }
 
     override fun teleopInit() {
-        driveTrainSubsystem.setToCoast()
-        rawDrive.schedule()
+//        driveTrainSubsystem.setToCoast()
+//        rawDrive.schedule()
         // resetArm()
     }
 
     private val targetSpeed = -5000 * 0.6
+//    var frame = 0
     override fun teleopPeriodic() {
+
+        launcherArmMotors.set(0.05)
+        /*
         SmartDashboard.putNumber("Launcher Speed", launcher.encoder.velocity)
         SmartDashboard.putNumber("Left Arm Encoder", launcherArmEncoderLeft.run { absolutePosition - positionOffset })
         SmartDashboard.putNumber("Right Arm Encoder", launcherArmEncoderRight.run { absolutePosition - positionOffset })
         SmartDashboard.putNumber("Left Arm Motor Encoder", launcherArmLeft.encoder.position)
         SmartDashboard.putNumber("Right Arm Motor Encoder", launcherArmRight.encoder.position)
 
+         */
+
         when {
-            joystick0.getRawButton(1) -> launch(targetSpeed)
-            joystick0.getRawButton(2) -> collect()
-            joystick0.getRawButton(3) -> resetArm()
+//            joystick0.getRawButton(1) -> launch(targetSpeed)
+//            joystick0.getRawButton(2) -> collect()
+//            joystick0.getRawButton(3) -> resetArm()
             else -> {
-                intake.stopMotor()
-                launcher.stopMotor()
+//                intake.stopMotor()
+//                launcher.stopMotor()
             }
         }
-
+/*
         if (limelightRunner.hasTargetRing) {
+            println("Robot has the game piece.")
             if (limelightRunner.xOffset > 0) {
                 repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) }
 //                driveTrainSubsystem.arcade(0.0, 0.3, false)
@@ -136,12 +159,19 @@ class Robot : TimedRobot() {
 //                driveTrainSubsystem.arcade(0.0, -0.3, false)
             }
         } else {
-            repeat(ledBuffer.length) { ledBuffer.setRGB(it, 200, 0, 0) }
+//            frame = 0
+            println("No game piece")
+            repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 200) }
 //            driveTrainSubsystem.stop()
         }
-        led.setData(ledBuffer)
-    }
 
+
+        //repeat(ledBuffer.length) { ledBuffer.setRGB(it, 70, 0, 150) }
+        led.setData(ledBuffer)
+
+ */
+    }
+/*
     private var launchPostAccelerationDelay = 0
     private fun launch(speed: Double) {
         if (!intakeSlot.get()) {
@@ -190,8 +220,10 @@ class Robot : TimedRobot() {
         }
     }
 
+ */
+
     override fun teleopExit() {
-        driveTrainSubsystem.setToBreak()
+//        driveTrainSubsystem.setToBreak()
         CommandScheduler.getInstance().cancelAll()
     }
 
