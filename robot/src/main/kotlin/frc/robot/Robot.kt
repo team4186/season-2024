@@ -3,6 +3,7 @@ package frc.robot
 import com.revrobotics.CANSparkBase
 import com.revrobotics.CANSparkLowLevel
 import com.revrobotics.CANSparkMax
+import edu.wpi.first.math.controller.PIDController
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
@@ -14,7 +15,7 @@ import frc.vision.LimelightRunner
 import kotlin.math.absoluteValue
 
 class Robot : TimedRobot() {
-//    private val joystick0 = Joystick(0) //drive joystick
+    private val joystick0 = Joystick(0) //drive joystick
 /*
     private val ledBuffer = AddressableLEDBuffer(20)
     private val led = AddressableLED(9).apply {
@@ -22,18 +23,23 @@ class Robot : TimedRobot() {
         setData(ledBuffer)
     }
 
+
+HELLO
  */
 
     // TODO set the channels and device ids
 
-//    private val launcherLeftArmLow = DigitalInput(0)
-//    private val launcherRightArmLow = DigitalInput(1)
+    private val launcherBottomLimit = DigitalInput(0)
+    private val launcherTopLimit = DigitalInput(1)
 //    private val launcherArmEncoderLeft = DutyCycleEncoder(2)
 //    private val launcherArmEncoderRight = DutyCycleEncoder(4)
+    private val boreEncoder = DutyCycleEncoder(5)
+
+//    launcher motors - right motor(21) follows left motor(20)
     private val launcherArmMotors = CANSparkMax(20, CANSparkLowLevel.MotorType.kBrushless)
         .also { lead ->
             with(CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless)) {
-                setIdleMode(CANSparkBase.IdleMode.kCoast)
+                setIdleMode(CANSparkBase.IdleMode.kBrake)
                 encoder.setPositionConversionFactor(1.0)
                 follow(lead, true)
             }
@@ -45,19 +51,6 @@ class Robot : TimedRobot() {
 
             // TODO find if the encoder and motor needs to be inverted
         }
-    /*
-    // TODO find if it can be handled as a follower of launcherArmLeft
-    private val launcherArmRight = CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless)
-        .apply {
-            setIdleMode(CANSparkBase.IdleMode.kBrake)
-            // TODO find the conversion factor
-            encoder.setPositionConversionFactor(1.0)
-            // TODO find if the encoder and motor needs to be inverted
-        }
-
-
-     */
-/*
 
     private val intakeSlot = DigitalInput(4)
     private val launcher = CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless)
@@ -72,11 +65,11 @@ class Robot : TimedRobot() {
             pidController.i = 0.0000033
         }
 
-     */
 
-//    private val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
 
-//    private val driveTrainSubsystem = DriveTrainSubsystem()
+    private val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
+
+        private val driveTrainSubsystem = DriveTrainSubsystem()
 
     private val limelightRunner = LimelightRunner()
 
@@ -128,26 +121,47 @@ class Robot : TimedRobot() {
     private val targetSpeed = -5000 * 0.6
 //    var frame = 0
     override fun teleopPeriodic() {
-
-        launcherArmMotors.set(0.05)
-        /*
         SmartDashboard.putNumber("Launcher Speed", launcher.encoder.velocity)
-        SmartDashboard.putNumber("Left Arm Encoder", launcherArmEncoderLeft.run { absolutePosition - positionOffset })
-        SmartDashboard.putNumber("Right Arm Encoder", launcherArmEncoderRight.run { absolutePosition - positionOffset })
-        SmartDashboard.putNumber("Left Arm Motor Encoder", launcherArmLeft.encoder.position)
-        SmartDashboard.putNumber("Right Arm Motor Encoder", launcherArmRight.encoder.position)
+        //SmartDashboard.putNumber("Left Arm Encoder", launcherArmEncoderLeft.run { absolutePosition - positionOffset })
+        //SmartDashboard.putNumber("Right Arm Encoder", launcherArmEncoderRight.run { absolutePosition - positionOffset })
+        SmartDashboard.putNumber("Launcher Motor Encoder", launcherArmMotors.encoder.position)
+//        SmartDashboard.putNumber("Right Arm Motor Encoder", launcherArmRight.encoder.position)
+        SmartDashboard.putBoolean("Bottom Limit", launcherBottomLimit.get())
+        SmartDashboard.putBoolean("Top Limit", launcherTopLimit.get())
 
-         */
 
-        when {
-//            joystick0.getRawButton(1) -> launch(targetSpeed)
-//            joystick0.getRawButton(2) -> collect()
-//            joystick0.getRawButton(3) -> resetArm()
+
+
+    when {
+            joystick0.getRawButton(1) -> launch(targetSpeed)
+            joystick0.getRawButton(2) -> collect()
             else -> {
-//                intake.stopMotor()
-//                launcher.stopMotor()
-            }
+          }
         }
+
+    if(joystick0.getRawButton(3)) {
+        armUp()
+    } else if(joystick0.getRawButton(4)) {
+        armDown()
+    } else {
+        launcherArmMotors.stopMotor()
+    }
+
+//    when {
+//        joystick0.getRawButton(12) -> armUp()
+//        else -> {
+//            launcherArmMotors.stopMotor()
+//        }
+//    }
+//
+//    when {
+//        joystick0.getRawButton(4) -> armDown()
+//        else -> {
+//            launcherArmMotors.stopMotor()
+//        }
+//    }
+
+
 /*
         if (limelightRunner.hasTargetRing) {
             println("Robot has the game piece.")
@@ -171,7 +185,7 @@ class Robot : TimedRobot() {
 
  */
     }
-/*
+
     private var launchPostAccelerationDelay = 0
     private fun launch(speed: Double) {
         if (!intakeSlot.get()) {
@@ -198,29 +212,74 @@ class Robot : TimedRobot() {
         }
     }
 
+    /*
+
     private fun resetArm() {
         // TODO find correct speed to run the arm towards zero
         // TODO find if the limit switch is open by default
 
         when {
-            launcherLeftArmLow.get() -> launcherArmLeft.set(-0.3)
+            launcherBottomLeftLimit.get() -> launcherArmLeft.set(-0.3)
             else -> {
                 launcherArmLeft.encoder.setPosition(0.0)
-                launcherArmEncoderLeft.reset()
+               // launcherArmEncoderLeft.reset()
             }
         }
 
         when {
-            launcherRightArmLow.get() -> launcherArmRight.set(-0.3)
+            launcherBottomRightLimit.get() -> launcherArmRight.set(-0.3)
             else -> {
                 launcherArmRight.encoder.setPosition(0.0)
-                launcherArmEncoderRight.reset()
+               // launcherArmEncoderRight.reset()
             }
 
         }
     }
+     */
 
- */
+
+    //top limit switch is false when broken
+    //bottom limit switch is true when broken
+    private fun armUp() {
+        var limitValue = launcherTopLimit.get()
+        if(!limitValue) {
+            println("trying to stop")
+            launcherArmMotors.stopMotor()
+            launcherArmMotors.encoder.setPosition(90.0)
+        }
+        else {
+            println("trying to move")
+            launcherArmMotors.set(0.5)
+        }
+    }
+
+    private fun armDown() {
+        if(launcherBottomLimit.get()) {
+            println("trying to stop")
+            launcherArmMotors.stopMotor()
+            launcherArmMotors.encoder.setPosition(0.0)
+        }
+        else {
+            launcherArmMotors.set(-0.5)
+       }
+    }
+
+    private fun setArmAngle(setpoint: Double) {
+        val position = launcherArmMotors.encoder.getPosition()
+        val pid = PIDController(
+            0.05, 0.0, 0.0
+            // power first until oscillates, I until gets there fast, then D until no oscillations
+        )
+        launcherArmMotors.set(pid.calculate(position, setpoint))
+        if(!launcherTopLimit.get()) {
+            launcherArmMotors.stopMotor()
+            launcherArmMotors.encoder.setPosition(90.0)
+        } else if(!launcherBottomLimit.get()) {
+            launcherArmMotors.stopMotor()
+            launcherArmMotors.encoder.setPosition(0.0)
+        }
+    }
+
 
     override fun teleopExit() {
 //        driveTrainSubsystem.setToBreak()
