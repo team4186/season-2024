@@ -3,6 +3,7 @@ package frc.robot
 import com.revrobotics.CANSparkBase
 import com.revrobotics.CANSparkLowLevel
 import com.revrobotics.CANSparkMax
+import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.controller.PIDController
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
@@ -33,7 +34,8 @@ HELLO
     private val launcherTopLimit = DigitalInput(1)
 //    private val launcherArmEncoderLeft = DutyCycleEncoder(2)
 //    private val launcherArmEncoderRight = DutyCycleEncoder(4)
-    private val boreEncoder = DutyCycleEncoder(5)
+    private val boreEncoder = Encoder(5, 6, true, CounterBase.EncodingType.k1X)
+    private val launcherArmMotorsPID = PIDController(0.01, 0.0, 0.0) // power first until oscillates, I until gets there fast, then D until no oscillations
 
 //    launcher motors - right motor(21) follows left motor(20)
     private val launcherArmMotors = CANSparkMax(20, CANSparkLowLevel.MotorType.kBrushless)
@@ -129,38 +131,34 @@ HELLO
         SmartDashboard.putBoolean("Bottom Limit", launcherBottomLimit.get())
         SmartDashboard.putBoolean("Top Limit", launcherTopLimit.get())
 
+//    var encoderValue = getEncoderValue()
+    if(joystick0.getRawButton(1)) {
+        launch(targetSpeed)
+    } else {
+        launcher.stopMotor()
+    }
 
-
-
-    when {
-            joystick0.getRawButton(1) -> launch(targetSpeed)
-            joystick0.getRawButton(2) -> collect()
-            else -> {
-          }
-        }
+    if(joystick0.getRawButton(2)) {
+        collect()
+    } else {
+        intake.stopMotor()
+    }
 
     if(joystick0.getRawButton(3)) {
         armUp()
     } else if(joystick0.getRawButton(4)) {
         armDown()
+    } else if(joystick0.getRawButton(5)) {
+        setAngle(255.0)
+    } else if(joystick0.getRawButton(6)) {
+        setAngle(0.0)
+    } else if(joystick0.getRawButton(7)) {
+        setAngle(499.0)
+    } else if(joystick0.getRawButton(8)) {
+        setAngle(170.0)
     } else {
         launcherArmMotors.stopMotor()
     }
-
-//    when {
-//        joystick0.getRawButton(12) -> armUp()
-//        else -> {
-//            launcherArmMotors.stopMotor()
-//        }
-//    }
-//
-//    when {
-//        joystick0.getRawButton(4) -> armDown()
-//        else -> {
-//            launcherArmMotors.stopMotor()
-//        }
-//    }
-
 
 /*
         if (limelightRunner.hasTargetRing) {
@@ -190,7 +188,7 @@ HELLO
     private fun launch(speed: Double) {
         if (!intakeSlot.get()) {
             launcher.pidController.setReference(speed, CANSparkBase.ControlType.kVelocity)
-            if (launcher.encoder.velocity.absoluteValue >= speed.absoluteValue) {
+            if (launcher.encoder.velocity.absoluteValue <= speed.absoluteValue) {
                 launchPostAccelerationDelay++
                 if (launchPostAccelerationDelay >= 5) {
                     intake.set(-0.75)
@@ -210,6 +208,12 @@ HELLO
         } else {
             intake.stopMotor()
         }
+    }
+
+    private fun getEncoderValue(): Double {
+        println(boreEncoder.distance)
+        SmartDashboard.putNumber("Bore Encoder", boreEncoder.distance)
+        return boreEncoder.distance
     }
 
     /*
@@ -245,11 +249,11 @@ HELLO
         if(!limitValue) {
             println("trying to stop")
             launcherArmMotors.stopMotor()
-            launcherArmMotors.encoder.setPosition(90.0)
+            launcherArmMotors.encoder.setPosition(0.25)
         }
         else {
             println("trying to move")
-            launcherArmMotors.set(0.5)
+            launcherArmMotors.set(0.3)
         }
     }
 
@@ -260,24 +264,64 @@ HELLO
             launcherArmMotors.encoder.setPosition(0.0)
         }
         else {
-            launcherArmMotors.set(-0.5)
+            launcherArmMotors.set(-0.3)
        }
     }
 
-    private fun setArmAngle(setpoint: Double) {
-        val position = launcherArmMotors.encoder.getPosition()
-        val pid = PIDController(
-            0.05, 0.0, 0.0
-            // power first until oscillates, I until gets there fast, then D until no oscillations
-        )
-        launcherArmMotors.set(pid.calculate(position, setpoint))
-        if(!launcherTopLimit.get()) {
+    private fun setAngle(setpoint:Double) {
+        var upperLimit = launcherTopLimit.get()
+        var bottomLimit = launcherBottomLimit.get()
+        var position = boreEncoder.distance
+        if(!upperLimit && boreEncoder.direction) {
             launcherArmMotors.stopMotor()
-            launcherArmMotors.encoder.setPosition(90.0)
-        } else if(!launcherBottomLimit.get()) {
+        } else if(bottomLimit && !boreEncoder.direction) {
             launcherArmMotors.stopMotor()
-            launcherArmMotors.encoder.setPosition(0.0)
+        } else {
+            launcherArmMotors.set(MathUtil.clamp(launcherArmMotorsPID.calculate(position, setpoint), -0.3, 0.3))
         }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private fun setArmAngle(setpoint: Double) {
+        var topLimitValue = launcherTopLimit.get()
+        var bottomLimitValue = launcherTopLimit.get()
+        val position = boreEncoder.distance
+        if(!topLimitValue && !bottomLimitValue && boreEncoder.rate > 0) {
+            launcherArmMotors.stopMotor()
+        } else if(bottomLimitValue && topLimitValue && boreEncoder.rate < 0) {
+            launcherArmMotors.stopMotor()
+        } else {
+            println("Setpoint: " + setpoint)
+            println("Encoder Distance: " + position)
+            launcherArmMotors.set(MathUtil.clamp(launcherArmMotorsPID.calculate(position, setpoint), -0.3, 0.3))
+        }
+
+
+//        if(!topLimitValue && !bottomLimitValue && boreEncoder.rate > 0) {
+//            launcherArmMotors.stopMotor()
+//        } else if(bottomLimitValue && topLimitValue && boreEncoder.rate < 0) {
+//            launcherArmMotors.stopMotor()
+//        } else {
+//            println("Setpoint: " + setpoint)
+//            println("Encoder Distance: " + position)
+//            launcherArmMotors.set(MathUtil.clamp(launcherArmMotorsPID.calculate(position, setpoint), -0.3, 0.3))
+//        }
     }
 
 
