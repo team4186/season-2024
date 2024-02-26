@@ -4,6 +4,7 @@ import edu.wpi.first.math.util.Units
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
+import kotlin.math.tan
 
 class LimelightRunner(
     private val tableRing: NetworkTable = NetworkTableInstance.getDefault().getTable("limelight-ring"),
@@ -12,7 +13,7 @@ class LimelightRunner(
     fun periodic() {
         SmartDashboard.putBoolean("Has Target Ring?", hasTargetRing)
         SmartDashboard.putBoolean("Has Target Tag?", hasTargetTag)
-        SmartDashboard.putNumber("X Offset", xOffset)
+        SmartDashboard.putNumber("X Offset", tagxOffset)
         //SmartDashboard.putNumber("Y Offset", yOffset)
         SmartDashboard.putNumber("% of Image", tagArea)
         SmartDashboard.putNumber("Distance", Units.metersToInches(distance))
@@ -28,17 +29,23 @@ class LimelightRunner(
             return tableTag.getEntry("tv").getDouble(0.0) > 0.0
         }
 
-    val xOffset: Double get() = tableRing.getEntry("tx").getDouble(0.0)
-    val yOffset: Double get() = tableRing.getEntry("ty").getDouble(0.0)
-    val tagArea: Double get() = tableRing.getEntry("ta").getDouble(0.0)
+    val ringxOffset: Double get() = tableRing.getEntry("tx").getDouble(0.0)
+    val ringyOffset: Double get() = tableRing.getEntry("ty").getDouble(0.0)
+    val ringArea: Double get() = tableRing.getEntry("ta").getDouble(0.0)
 
+    val tagxOffset: Double get() = tableTag.getEntry("tx").getDouble(0.0)
+    val tagyOffset: Double get() = tableTag.getEntry("ty").getDouble(0.0)
+    val tagArea: Double get() = tableTag.getEntry("ta").getDouble(0.0)
+
+    //returns distance to AprilTag
     val distance: Double
         get() {
-            val targetDistance = 28.5 //inches away from limelight
-            //at this target distance, the targetArea is 0.038 (3.8%) rough estimate needs adjusting
-            val distance = targetDistance * tagArea / 0.038
+            //33.75 is height in inches of AprilTag off floor
+            //21.41 degrees is mounting angle of limelight
+            val angleInRadians = Math.toRadians((21.41 + tagyOffset))
+            val distance = 33.75 / tan(angleInRadians)
 
-            return if (hasTargetRing) distance else Double.NaN
+            return if (hasTargetTag) distance else Double.NaN
         }
 
     //Subject to change
@@ -59,5 +66,19 @@ class LimelightRunner(
 
     fun setLight(mode: Boolean) {
         tableRing.getEntry("ledMode").setValue(if (mode) 3.0 else 1.0)
+    }
+
+    fun lookupTableRound(distanceToTag: Double): Int {
+        val roundedNum = (distanceToTag - 36.37) / 12.0
+        when {
+            roundedNum > 8.0 -> return 8
+            roundedNum < 8.0 && roundedNum >= 7.0 -> return 8
+            roundedNum < 7.0 && roundedNum >= 6.0 -> return 6
+            roundedNum < 6.0 && roundedNum >= 5.0 -> return 6
+            roundedNum < 5.0 && roundedNum >= 4.0 -> return 4
+            roundedNum < 4.0 && roundedNum >= 3.0 -> return 4
+            roundedNum < 3.0 && roundedNum >= 2.0 -> return 2
+            else -> return 2
+        }
     }
 }
