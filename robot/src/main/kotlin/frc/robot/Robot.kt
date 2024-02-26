@@ -27,7 +27,6 @@ class Robot : TimedRobot() {
 
 HELLO
  */
-
     // TODO set the channels and device ids
     private val launcherBottomLimit = DigitalInput(0)
     private val launcherTopLimit = DigitalInput(1)

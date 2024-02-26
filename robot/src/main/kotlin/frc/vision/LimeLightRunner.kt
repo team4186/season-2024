@@ -24,6 +24,7 @@ class LimelightRunner(
             return tableRing.getEntry("tv").getDouble(0.0) > 0.0
         }
 
+
     val hasTargetTag: Boolean
         get() {
             return tableTag.getEntry("tv").getDouble(0.0) > 0.0
