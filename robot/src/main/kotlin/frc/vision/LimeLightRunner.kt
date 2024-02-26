@@ -19,6 +19,7 @@ class LimelightRunner(
         SmartDashboard.putNumber("Distance", Units.metersToInches(distance))
     }
 
+
     val hasTargetRing: Boolean
         get() {
             return tableRing.getEntry("tv").getDouble(0.0) > 0.0
