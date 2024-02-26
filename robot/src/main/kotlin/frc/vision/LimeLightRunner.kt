@@ -27,6 +27,7 @@ class LimelightRunner(
     val hasTargetTag: Boolean
         get() {
             return tableTag.getEntry("tv").getDouble(0.0) > 0.0
+
         }
 
     val ringxOffset: Double get() = tableRing.getEntry("tx").getDouble(0.0)
