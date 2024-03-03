@@ -12,7 +12,7 @@ class TeleopDrive(
     private val drive: (forward: Double, side: Double, turn: Double) -> Unit,
     private val stop: () -> Unit,
     private val shouldAttenuate: () -> Boolean = { true },
-    private val forward: () -> Double = { -1.0 },
+    private val forward: () -> Double = { -0.5 },
 ) : Command() {
 
     override fun execute() {
@@ -30,8 +30,6 @@ class TeleopDrive(
         }
         drive(-throttle, -strafe, turn)
     }
-
-
 
     override fun end(interrupted: Boolean) {
         stop()

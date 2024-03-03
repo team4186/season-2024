@@ -17,17 +17,12 @@ import kotlin.math.absoluteValue
 
 class Robot : TimedRobot() {
     private val joystick0 = Joystick(0) //drive joystick
-/*
     private val ledBuffer = AddressableLEDBuffer(20)
-    private val led = AddressableLED(9).apply {
-        setLength(ledBuffer.length)
-        setData(ledBuffer)
-    }
+//    private val led = AddressableLED(9).apply {
+//        setLength(ledBuffer.length)
+//        setData(ledBuffer)
+//    }
 
-
-
-HELLO
- */
     // TODO set the channels and device ids
     private val launcherBottomLimit = DigitalInput(0)
     private val launcherTopLimit = DigitalInput(1)
@@ -121,11 +116,6 @@ HELLO
         rawDrive.schedule()
         // resetArm()
 
-        while(!armDown())
-        {
-            println("arm moving down")
-        }
-
         boreEncoder.reset()
     }
 
@@ -151,9 +141,14 @@ HELLO
         val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
         desiredAngle = lookupArray[(roundedDistance/2)-1][1]
         lookUpSpeed = lookupArray[(roundedDistance/2)-1][0]
-        println("roundedDistance: " + roundedDistance)
-        println("desiredAngle: " + desiredAngle)
-        println("lookUpSpeed: " + lookUpSpeed)
+
+//        if(joystick0.getRawButton(12)) {
+//            alignToTarget()
+//        }
+
+//        println("roundedDistance: " + roundedDistance)
+//        println("desiredAngle: " + desiredAngle)
+//        println("lookUpSpeed: " + lookUpSpeed)
     }
 
     if(joystick0.getRawButton(1)) {
@@ -179,30 +174,45 @@ HELLO
         felipeSetAngle(170.0)
     } else {
         felipeSetAngle(convertToTicks(17.9))
+        println("It's getting here")
     }
 
-    /*
-            if (limelightRunner.hasTargetRing) {
-                println("Robot has the game piece.")
-                if (limelightRunner.xOffset > 0) {
-                    repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) }
-    //                driveTrainSubsystem.arcade(0.0, 0.3, false)
-                } else if (limelightRunner.xOffset < 0) {
-                    repeat(ledBuffer.length) { ledBuffer.setRGB(it, 200, 0, 0) }
-    //                driveTrainSubsystem.arcade(0.0, -0.3, false)
+    //    val timer = Timer()
+//    val turnOff = timerTask { repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 0) } }
+//    var wait = 0
+//    wait++
+//
+//    if (limelightRunner.hasTargetTag) {
+//        println("it's not easy being green")
+//        repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) } //turns green
+//        if (wait % 100 > 50) {
+//            //repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 0) }
+//            println("turning off")
+//        }  //periodic runs every 20 milliseconds
+//        //  timer.schedule(turnOff, 1000) //waits 1 second, then turns off
+
+
+        /*
+                if (limelightRunner.hasTargetRing) {
+                    println("Robot has the game piece.")
+                    if (limelightRunner.xOffset > 0) {
+                        repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) }
+        //                driveTrainSubsystem.arcade(0.0, 0.3, false)
+                    } else if (limelightRunner.xOffset < 0) {
+                        repeat(ledBuffer.length) { ledBuffer.setRGB(it, 200, 0, 0) }
+        //                driveTrainSubsystem.arcade(0.0, -0.3, false)
+                    }
+                } else {
+        //            frame = 0
+                    println("No game piece")
+                    repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 200) }
+        //            driveTrainSubsystem.stop()
                 }
-            } else {
-    //            frame = 0
-                println("No game piece")
-                repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 200) }
-    //            driveTrainSubsystem.stop()
-            }
+    */
+//    repeat(ledBuffer.length) { ledBuffer.setRGB(it, 70, 0, 150) }
+//    led.setData(ledBuffer)
 
-
-            //repeat(ledBuffer.length) { ledBuffer.setRGB(it, 70, 0, 150) }
-            led.setData(ledBuffer)
-
-     */
+    // }
 }
 
 
@@ -210,11 +220,11 @@ HELLO
 //        private val targetSpeed = -5000 * 0.2
         if (!intakeSlot.get()) {
             launcher.set(lookUpSpeed)
-            println("Outside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
-            println("Outside if target speed: " + speed.absoluteValue)
+           // println("Outside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
+            //println("Outside if target speed: " + speed.absoluteValue)
             if (launcher.encoder.velocity.absoluteValue >= speed.absoluteValue) {
-                println("Inside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
-                println("Inside if target speed: " + speed.absoluteValue)
+              //  println("Inside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
+                //println("Inside if target speed: " + speed.absoluteValue)
                 intake.set(-0.5)
 //                launchPostAccelerationDelay++
 //                if (launchPostAccelerationDelay >= 2) {
@@ -246,6 +256,19 @@ HELLO
         return angle * 5.670
     }
 
+    private fun alignToTarget() {
+        if(limelightRunner.tagxOffset < 0) {
+//            driveTrainSubsystem.arcade(0.0,-0.3,false)
+            println("It's negative")
+        } else if(limelightRunner.tagxOffset > 0) {
+//            driveTrainSubsystem.arcade(0.0,0.3,false)
+            println("It's positive")
+        } else {
+//            driveTrainSubsystem.stop()
+            println("STOP")
+        }
+    }
+
     /*
 
     private fun resetArm() {
@@ -272,7 +295,7 @@ HELLO
      */
 
 
-    var launcherSpeed = 0.2  //TODO armSpeed
+    var launcherSpeed = 0.3  //TODO armSpeed
 
     //top limit switch is false when broken
     //bottom limit switch is true when broken
@@ -307,6 +330,7 @@ HELLO
         val bottomLimit = launcherBottomLimit.get()
         val position = boreEncoder.distance
         val velocity = MathUtil.clamp(launcherArmMotorsPID.calculate(position, setpoint), -launcherSpeed, launcherSpeed)
+        println("velocity: " + velocity)
         when {
             !upperLimit && velocity > 0 -> launcherArmMotors.stopMotor()
             bottomLimit && velocity < 0 -> {
