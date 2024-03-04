@@ -142,10 +142,6 @@ class Robot : TimedRobot() {
         desiredAngle = lookupArray[(roundedDistance/2)-1][1]
         lookUpSpeed = lookupArray[(roundedDistance/2)-1][0]
 
-//        if(joystick0.getRawButton(12)) {
-//            alignToTarget()
-//        }
-
 //        println("roundedDistance: " + roundedDistance)
 //        println("desiredAngle: " + desiredAngle)
 //        println("lookUpSpeed: " + lookUpSpeed)
@@ -174,7 +170,10 @@ class Robot : TimedRobot() {
         felipeSetAngle(170.0)
     } else {
         felipeSetAngle(convertToTicks(17.9))
-        println("It's getting here")
+    }
+
+    if (joystick0.getRawButton(12)) {
+        alignToTarget()
     }
 
     //    val timer = Timer()
@@ -257,16 +256,28 @@ class Robot : TimedRobot() {
     }
 
     private fun alignToTarget() {
-        if(limelightRunner.tagxOffset < 0) {
-//            driveTrainSubsystem.arcade(0.0,-0.3,false)
-            println("It's negative")
-        } else if(limelightRunner.tagxOffset > 0) {
-//            driveTrainSubsystem.arcade(0.0,0.3,false)
-            println("It's positive")
+        if (limelightRunner.hasTargetTag) {
+            println("Robot has the game piece.")
+            if (limelightRunner.tagxOffset > 0) {
+                driveTrainSubsystem.arcade(0.0, 0.3, false)
+                println("It's positive")
+            } else if (limelightRunner.tagxOffset < 0) {
+                driveTrainSubsystem.arcade(0.0, -0.3, false)
+                println("It's negative")
+            }
         } else {
-//            driveTrainSubsystem.stop()
-            println("STOP")
+            driveTrainSubsystem.stop()
         }
+//        if(limelightRunner.tagxOffset < 0) {
+//            driveTrainSubsystem.arcade(0.0,-0.3,false)
+//            println("It's negative")
+//        } else if(limelightRunner.tagxOffset > 0) {
+//            driveTrainSubsystem.arcade(0.0,0.3,false)
+//            println("It's positive")
+//        } else {
+//            driveTrainSubsystem.stop()
+//            println("STOP")
+//        }
     }
 
     /*
@@ -330,7 +341,6 @@ class Robot : TimedRobot() {
         val bottomLimit = launcherBottomLimit.get()
         val position = boreEncoder.distance
         val velocity = MathUtil.clamp(launcherArmMotorsPID.calculate(position, setpoint), -launcherSpeed, launcherSpeed)
-        println("velocity: " + velocity)
         when {
             !upperLimit && velocity > 0 -> launcherArmMotors.stopMotor()
             bottomLimit && velocity < 0 -> {

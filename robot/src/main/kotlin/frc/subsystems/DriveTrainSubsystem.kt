@@ -41,7 +41,6 @@ class DriveTrainSubsystem(
         drive.isSafetyEnabled = false
     }
 
-
     fun stop() {
         drive.stopMotor()
         motorSafety.feed()
