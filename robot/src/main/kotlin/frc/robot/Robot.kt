@@ -31,7 +31,18 @@ class Robot : TimedRobot() {
     private val boreEncoder = Encoder(5, 6, true, CounterBase.EncodingType.k1X)
     private val launcherArmMotorsPID = PIDController(0.01, 0.0, 0.0) // power first until oscillates, I until gets there fast, then D until no oscillations
     private var launchPostAccelerationDelay = 0
-    private val lookupArray = arrayOf(doubleArrayOf(-55.0,25.0), doubleArrayOf(-70.0,33.0), doubleArrayOf(-70.0,35.0), doubleArrayOf(-70.0,36.0))
+    private val lookupArray = arrayOf(doubleArrayOf(-0.70,17.0),
+        doubleArrayOf(-0.70,17.0),
+        doubleArrayOf(-0.70,21.0),
+        doubleArrayOf(-0.70,26.0),
+        doubleArrayOf(-0.70,28.0),
+        doubleArrayOf(-0.70,30.0),
+        doubleArrayOf(-0.70,32.0),
+        doubleArrayOf(-0.75,34.0),
+        doubleArrayOf(-0.75,37.0),
+        doubleArrayOf(-0.80,37.0),
+        doubleArrayOf(-0.80,38.5),
+        doubleArrayOf(-0.85,38.7))
 
 //    launcher motors - right motor(21) follows left motor(20)
     private val launcherArmMotors = CANSparkMax(20, CANSparkLowLevel.MotorType.kBrushless)
@@ -119,7 +130,9 @@ class Robot : TimedRobot() {
         boreEncoder.reset()
     }
 
-    private val targetSpeed = -5000 * 0.69
+//    private val targetSpeed = -5000 * 0.69
+    var lookUpSpeed = 0.0
+    var desiredAngle = 0.0
 //    var frame = 0
     override fun teleopPeriodic() {
         SmartDashboard.putNumber("Launcher Speed", launcher.encoder.velocity)
@@ -133,24 +146,24 @@ class Robot : TimedRobot() {
 
 //    var encoderValue = getEncoderValue()
 
-    var desiredAngle = 0.0
-    var lookUpSpeed = 0.0
+//    var desiredAngle = 0.0
+//    var lookUpSpeed = 0.0
 
     if(limelightRunner.hasTargetTag) {
         val distanceToTag = limelightRunner.distance
         val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
-        desiredAngle = lookupArray[(roundedDistance/2)-1][1]
-        lookUpSpeed = lookupArray[(roundedDistance/2)-1][0]
+        desiredAngle = lookupArray[(roundedDistance)][1]
+        lookUpSpeed = lookupArray[(roundedDistance)][0]
 
-//        println("roundedDistance: " + roundedDistance)
-//        println("desiredAngle: " + desiredAngle)
-//        println("lookUpSpeed: " + lookUpSpeed)
+        println("roundedDistance: " + roundedDistance)
     }
 
     if(joystick0.getRawButton(1)) {
-        launch(5000 * (lookUpSpeed + 0.05), lookUpSpeed)
+        launch(lookUpSpeed + 0.01, lookUpSpeed)
     } else if(joystick0.getRawButton(2)) {
         collect()
+    } else if(joystick0.getRawButton(11)) {
+        antiCollect()
     } else {
         launcher.stopMotor()
         intake.stopMotor()
@@ -220,11 +233,11 @@ class Robot : TimedRobot() {
 //        private val targetSpeed = -5000 * 0.2
         if (!intakeSlot.get()) {
             launcher.set(lookUpSpeed)
-           // println("Outside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
-            //println("Outside if target speed: " + speed.absoluteValue)
-            if (launcher.encoder.velocity.absoluteValue >= speed.absoluteValue) {
-              //  println("Inside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
-                //println("Inside if target speed: " + speed.absoluteValue)
+            println("Outside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
+            println("Outside if target speed: " + (5000 * speed).absoluteValue)
+            if (launcher.encoder.velocity.absoluteValue >= (5000 * speed).absoluteValue) {
+                println("Inside if launcher speed: " + launcher.encoder.velocity.absoluteValue)
+                println("Inside if target speed: " + speed.absoluteValue)
                 intake.set(-0.5)
 //                launchPostAccelerationDelay++
 //                if (launchPostAccelerationDelay >= 2) {
@@ -242,6 +255,14 @@ class Robot : TimedRobot() {
     private fun collect() {
         if (intakeSlot.get()) {
             intake.set(-0.65)
+        } else {
+            intake.stopMotor()
+        }
+    }
+
+    private fun antiCollect() {
+        if (intakeSlot.get()) {
+            intake.set(0.65)
         } else {
             intake.stopMotor()
         }
