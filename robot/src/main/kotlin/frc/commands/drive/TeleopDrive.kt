@@ -45,5 +45,4 @@ class TeleopDrive(
     private fun attenuated(value: Double): Double {
         return 0.75 * value.absoluteValue.pow(2).withSign(value)
     }
-
 }
