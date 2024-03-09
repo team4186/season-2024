@@ -17,6 +17,7 @@ import kotlin.math.absoluteValue
 
 class Robot : TimedRobot() {
     private val joystick0 = Joystick(0) //drive joystick
+    private val joystick1 = Joystick(1) //operator joystick
     private val ledBuffer = AddressableLEDBuffer(20)
 //    private val led = AddressableLED(9).apply {
 //        setLength(ledBuffer.length)
@@ -29,7 +30,7 @@ class Robot : TimedRobot() {
 //    private val launcherArmEncoderLeft = DutyCycleEncoder(2)
 //    private val launcherArmEncoderRight = DutyCycleEncoder(4)
     private val boreEncoder = Encoder(5, 6, true, CounterBase.EncodingType.k1X)
-    private val launcherArmMotorsPID = PIDController(0.01, 0.0, 0.0) // power first until oscillates, I until gets there fast, then D until no oscillations
+    private val launcherArmMotorsPID = PIDController(0.005, 0.0, 0.0) // power first until oscillates, I until gets there fast, then D until no oscillations
     private var launchPostAccelerationDelay = 0
     private val lookupArray = arrayOf(doubleArrayOf(-0.70,17.0),
         doubleArrayOf(-0.70,17.0),
@@ -75,7 +76,6 @@ class Robot : TimedRobot() {
         }
 
 
-
     private val intake: CANSparkMax = CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless)
 
     private val driveTrainSubsystem = DriveTrainSubsystem()
@@ -84,9 +84,21 @@ class Robot : TimedRobot() {
 
     private val autonomousChooser = SendableChooser<Command>()
 
+    enum class autoSequence {
+        RESETARM, SHOOTPRELOAD, ARMDOWN, MOVEFORWARD, SHOOTSECONDNOTE, STOP
+    } //MOVEFORWARD needs to intake as well
+
+    enum class teleopSequence {
+        RESETARM, NORMALTELEOP, STOP
+    }
+
+    var teleopState = teleopSequence.RESETARM
+    var autoState = autoSequence.RESETARM
+    var stopDriveTrain = false
+
     private val rawDrive = TeleopDrive(
         inputThrottle = { joystick0.y },
-        inputTurn = { joystick0.twist },
+        inputTurn = { -joystick0.twist },
         inputYaw = { joystick0.x },
         drive = { forward, _, turn -> driveTrainSubsystem.arcade(forward, turn, squareInputs = true) },
         stop = { driveTrainSubsystem.stop() }
@@ -102,8 +114,9 @@ class Robot : TimedRobot() {
             setDefaultOption("Nothing", null)
             SmartDashboard.putData("Autonomous Mode", this)
         }
-    }
 
+        SmartDashboard.putBoolean("TwoPieceforTrue", true)
+    }
 
     override fun robotPeriodic() {
         CommandScheduler.getInstance().run()
@@ -113,9 +126,93 @@ class Robot : TimedRobot() {
         driveTrainSubsystem.setToBreak()
         val autonomous = autonomousChooser.selected
         autonomous?.schedule()
+        autoState = autoSequence.RESETARM
     }
 
+//    var driveForward = true
     override fun autonomousPeriodic() {
+        when(autoState) {
+            autoSequence.RESETARM -> {
+                armDown()
+                if(launcherBottomLimit.get()) {
+                    autoState = autoSequence.SHOOTPRELOAD
+                }
+            }
+            autoSequence.SHOOTPRELOAD -> {
+                if(limelightRunner.hasTargetTag) {
+                    val distanceToTag = limelightRunner.distance
+                    val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
+                    desiredAngle  = lookupArray[(roundedDistance)][1]
+                    lookUpSpeed = lookupArray[(roundedDistance)][0]
+                }
+
+                if(!intakeSlot.get()) {
+                    felipeSetAngle(convertToTicks(17.0))
+                    launch(-0.70 + 0.01, -0.70)
+                } else {
+                    launcher.stopMotor()
+//                    autoState = autoSequence.ARMDOWN
+                    if(SmartDashboard.getBoolean("TwoPieceforTrue", true)) {
+                        autoState = autoSequence.ARMDOWN
+                    } else {
+                        autoState = autoSequence.STOP
+                    }
+                }
+            }
+            autoSequence.ARMDOWN -> {
+                felipeSetAngle(convertToTicks(0.0))
+                if(launcherBottomLimit.get()) {
+                    launcherArmMotors.stopMotor()
+                    autoState = autoSequence.MOVEFORWARD
+                }
+            }
+            autoSequence.MOVEFORWARD -> {
+                driveTrainSubsystem.arcade(1.0, 0.0, false)
+                collect()
+                if(!intakeSlot.get()) {
+                    driveTrainSubsystem.stop()
+                    autoState = autoSequence.SHOOTSECONDNOTE
+                }
+            }
+            autoSequence.SHOOTSECONDNOTE -> {
+                if(limelightRunner.hasTargetTag) {
+                    val distanceToTag = limelightRunner.distance
+                    val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
+                    desiredAngle  = lookupArray[(roundedDistance)][1]
+                    lookUpSpeed = lookupArray[(roundedDistance)][0]
+                }
+
+                if(!intakeSlot.get()) {
+                    felipeSetAngle(convertToTicks(desiredAngle))
+                    launch(lookUpSpeed + 0.01, lookUpSpeed)
+                } else {
+                    launcher.stopMotor()
+                    autoState = autoSequence.STOP
+                }
+            }
+            autoSequence.STOP -> {
+                launcherArmMotors.stopMotor()
+                launcher.stopMotor()
+                driveTrainSubsystem.stop()
+            }
+        }
+        /*
+        if(limelightRunner.hasTargetTag) {
+            val distanceToTag = limelightRunner.distance
+            val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
+            desiredAngle  = lookupArray[(roundedDistance)][1]
+            lookUpSpeed = lookupArray[(roundedDistance)][0]
+        }
+
+        if(!intakeSlot.get()) {
+            felipeSetAngle(convertToTicks(desiredAngle))
+            launch(lookUpSpeed + 0.01, lookUpSpeed)
+        } else {
+            if(limelightRunner.hasTargetRing) {
+                driveTrainSubsystem.arcade(1.0, 0.0, false)
+            }
+        }
+*/
     }
 
     override fun autonomousExit() {
@@ -128,104 +225,91 @@ class Robot : TimedRobot() {
         // resetArm()
 
         boreEncoder.reset()
+        teleopState = teleopSequence.RESETARM
+        println("teleopState is now RESETARM")
     }
 
 //    private val targetSpeed = -5000 * 0.69
     var lookUpSpeed = 0.0
     var desiredAngle = 0.0
 //    var frame = 0
+
     override fun teleopPeriodic() {
-        SmartDashboard.putNumber("Launcher Speed", launcher.encoder.velocity)
-        //SmartDashboard.putNumber("Left Arm Encoder", launcherArmEncoderLeft.run { absolutePosition - positionOffset })
-        //SmartDashboard.putNumber("Right Arm Encoder", launcherArmEncoderRight.run { absolutePosition - positionOffset })
-        SmartDashboard.putNumber("Launcher Motor Encoder", launcherArmMotors.encoder.position)
+        when(teleopState) {
+            teleopSequence.RESETARM -> {
+                armDown()
+                if(launcherBottomLimit.get()) {
+                    teleopState = teleopSequence.NORMALTELEOP
+                }
+            }
+            teleopSequence.NORMALTELEOP -> {
+                SmartDashboard.putNumber("Launcher Speed", launcher.encoder.velocity)
+                //SmartDashboard.putNumber("Left Arm Encoder", launcherArmEncoderLeft.run { absolutePosition - positionOffset })
+                //SmartDashboard.putNumber("Right Arm Encoder", launcherArmEncoderRight.run { absolutePosition - positionOffset })
+                SmartDashboard.putNumber("Launcher Motor Encoder", launcherArmMotors.encoder.position)
 //        SmartDashboard.putNumber("Right Arm Motor Encoder", launcherArmRight.encoder.position)
-        SmartDashboard.putBoolean("Bottom Limit", launcherBottomLimit.get())
-        SmartDashboard.putBoolean("Top Limit", launcherTopLimit.get())
-        getEncoderValue()
+                SmartDashboard.putBoolean("Bottom Limit", launcherBottomLimit.get())
+                SmartDashboard.putBoolean("Top Limit", launcherTopLimit.get())
+                getEncoderValue()
 
 //    var encoderValue = getEncoderValue()
 
 //    var desiredAngle = 0.0
 //    var lookUpSpeed = 0.0
 
-    if(limelightRunner.hasTargetTag) {
-        val distanceToTag = limelightRunner.distance
-        val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
-        desiredAngle = lookupArray[(roundedDistance)][1]
-        lookUpSpeed = lookupArray[(roundedDistance)][0]
+                if(limelightRunner.hasTargetTag) {
+                    val distanceToTag = limelightRunner.distance
+                    val roundedDistance = limelightRunner.lookupTableRound(distanceToTag)
+                    desiredAngle = lookupArray[(roundedDistance)][1]
+                    lookUpSpeed = lookupArray[(roundedDistance)][0]
 
-        println("roundedDistance: " + roundedDistance)
-    }
-
-    if(joystick0.getRawButton(1)) {
-        launch(lookUpSpeed + 0.01, lookUpSpeed)
-    } else if(joystick0.getRawButton(2)) {
-        collect()
-    } else if(joystick0.getRawButton(11)) {
-        antiCollect()
-    } else {
-        launcher.stopMotor()
-        intake.stopMotor()
-    }
-
-    if(joystick0.getRawButton(3)) {
-        armUp()
-    } else if(joystick0.getRawButton(4)) {
-        armDown()
-    } else if(joystick0.getRawButton(5)) {
-        felipeSetAngle(convertToTicks(desiredAngle))
-    } else if(joystick0.getRawButton(6)) {
-        felipeSetAngle(0.0)
-    } else if(joystick0.getRawButton(7)) {
-        felipeSetAngle(499.0)
-    } else if(joystick0.getRawButton(8)) {
-        felipeSetAngle(170.0)
-    } else {
-        felipeSetAngle(convertToTicks(17.9))
-    }
-
-    if (joystick0.getRawButton(12)) {
-        alignToTarget()
-    }
-
-
-    //    val timer = Timer()
-//    val turnOff = timerTask { repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 0) } }
-//    var wait = 0
-//    wait++
-//
-//    if (limelightRunner.hasTargetTag) {
-//        println("it's not easy being green")
-//        repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) } //turns green
-//        if (wait % 100 > 50) {
-//            //repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 0) }
-//            println("turning off")
-//        }  //periodic runs every 20 milliseconds
-//        //  timer.schedule(turnOff, 1000) //waits 1 second, then turns off
-
-
-        /*
-                if (limelightRunner.hasTargetRing) {
-                    println("Robot has the game piece.")
-                    if (limelightRunner.xOffset > 0) {
-                        repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 200, 0) }
-        //                driveTrainSubsystem.arcade(0.0, 0.3, false)
-                    } else if (limelightRunner.xOffset < 0) {
-                        repeat(ledBuffer.length) { ledBuffer.setRGB(it, 200, 0, 0) }
-        //                driveTrainSubsystem.arcade(0.0, -0.3, false)
-                    }
-                } else {
-        //            frame = 0
-                    println("No game piece")
-                    repeat(ledBuffer.length) { ledBuffer.setRGB(it, 0, 0, 200) }
-        //            driveTrainSubsystem.stop()
+                    println("roundedDistance: " + roundedDistance)
                 }
-    */
-//    repeat(ledBuffer.length) { ledBuffer.setRGB(it, 70, 0, 150) }
-//    led.setData(ledBuffer)
 
-    // }
+                if(joystick0.getRawButton(1) || joystick1.getRawButton(1)) {
+                    launch(lookUpSpeed + 0.01, lookUpSpeed)
+                } else if(joystick0.getRawButton(2) || joystick1.getRawButton(2)) {
+                    collect()
+                } else if(joystick0.getRawButton(10) || joystick1.getRawButton(10)) {
+//                    felipeSetAngle(convertToTicks(90.0))
+                    launch(-0.20 + 0.01, -0.20)
+                } else if(joystick0.getRawButton(11) || joystick1.getRawButton(11)) {
+                    antiCollect()
+                } else {
+                    launcher.stopMotor()
+                    intake.stopMotor()
+                }
+
+                if(joystick0.getRawButton(3) || joystick1.getRawButton(3)) {
+                    armUp()
+                } else if(joystick0.getRawButton(4) || joystick1.getRawButton(4)) {
+                    armDown()
+                } else if(joystick0.getRawButton(5) || joystick1.getRawButton(5)) {
+                    felipeSetAngle(convertToTicks(desiredAngle))
+                } else if(joystick0.getRawButton(6) || joystick1.getRawButton(6)) {
+                    felipeSetAngle(0.0)
+                } else if(joystick0.getRawButton(7) || joystick1.getRawButton(7)) {
+                    felipeSetAngle(convertToTicks(92.0))
+                } else if(joystick0.getRawButton(8) || joystick1.getRawButton(8)) {
+                    felipeSetAngle(170.0)
+                } else {
+                    felipeSetAngle(convertToTicks(17.9))
+                }
+
+                if (joystick0.getRawButton(12) || joystick1.getRawButton(12)) {
+                    alignToTarget()
+                    stopDriveTrain = true
+                } else {
+                    if(stopDriveTrain) {
+                        driveTrainSubsystem.stop()
+                        stopDriveTrain = false
+                    }
+                }
+            }
+            teleopSequence.STOP -> {
+
+            }
+        }
 }
 
 
@@ -261,11 +345,7 @@ class Robot : TimedRobot() {
     }
 
     private fun antiCollect() {
-        if (intakeSlot.get()) {
-            intake.set(0.65)
-        } else {
-            intake.stopMotor()
-        }
+        intake.set(0.65)
     }
 
     private fun getEncoderValue(): Double {
@@ -328,7 +408,7 @@ class Robot : TimedRobot() {
      */
 
 
-    var launcherSpeed = 0.3  //TODO armSpeed
+    var launcherSpeed = 0.35  //TODO armSpeed
 
     //top limit switch is false when broken
     //bottom limit switch is true when broken
@@ -348,6 +428,7 @@ class Robot : TimedRobot() {
     private fun armDown(): Boolean {
         if(launcherBottomLimit.get()) {
             println("trying to stop")
+            boreEncoder.reset()
             launcherArmMotors.stopMotor()
             return true
 //            launcherArmMotors.encoder.setPosition(0.0)
@@ -358,19 +439,26 @@ class Robot : TimedRobot() {
         }
     }
 
-    private fun felipeSetAngle(setpoint:Double) {
+    private fun felipeSetAngle(setpoint:Double): Boolean {
         val upperLimit = launcherTopLimit.get()
         val bottomLimit = launcherBottomLimit.get()
         val position = boreEncoder.distance
         val velocity = MathUtil.clamp(launcherArmMotorsPID.calculate(position, setpoint), -launcherSpeed, launcherSpeed)
         when {
-            !upperLimit && velocity > 0 -> launcherArmMotors.stopMotor()
+            !upperLimit && velocity > 0 -> {
+                launcherArmMotors.stopMotor()
+                return true
+            }
             bottomLimit && velocity < 0 -> {
                 launcherArmMotors.stopMotor()
                 launcherArmMotors.encoder.setPosition(0.0)
+                return true
             }
-            else -> launcherArmMotors.set(velocity)
+            else -> {
+                launcherArmMotors.set(velocity)
+            }
         }
+        return true
     }
 
     private fun setArmAngle(setpoint: Double) {
