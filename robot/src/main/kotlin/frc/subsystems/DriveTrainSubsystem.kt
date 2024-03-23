@@ -1,26 +1,16 @@
 package frc.subsystems
 
 import com.revrobotics.CANSparkBase
-import com.revrobotics.CANSparkLowLevel
 import com.revrobotics.CANSparkMax
 import edu.wpi.first.wpilibj.MotorSafety
 import edu.wpi.first.wpilibj.drive.DifferentialDrive
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 
 class DriveTrainSubsystem(
-    val leftMotor: CANSparkMax = driveSparkMaxMotors(
-        CANSparkMax(8, CANSparkLowLevel.MotorType.kBrushless),
-        CANSparkMax(9, CANSparkLowLevel.MotorType.kBrushless),
-        inverted = true,
-    ),
-    val rightMotor: CANSparkMax = driveSparkMaxMotors(
-        CANSparkMax(11, CANSparkLowLevel.MotorType.kBrushless),
-        CANSparkMax(10, CANSparkLowLevel.MotorType.kBrushless),
-        inverted = false,
-    ),
+    val leftMotor: CANSparkMax,
+    val rightMotor: CANSparkMax,
 ) : SubsystemBase() {
     private val drive: DifferentialDrive = DifferentialDrive(leftMotor, rightMotor)
-    private var currentForward = 0.0
 
     private val motorSafety: MotorSafety = object : MotorSafety() {
         override fun stopMotor() {
@@ -58,15 +48,6 @@ class DriveTrainSubsystem(
 
     fun arcade(forward: Double, turn: Double, squareInputs: Boolean) {
         drive.arcadeDrive(forward, turn, squareInputs)
-    }
-
-    fun holonomic(forward: Double, turn: Double, strafe: Double, squareInputs: Boolean) {
-        drive.arcadeDrive(forward, turn, squareInputs)
-        currentForward = forward
-    }
-
-    fun turnOnly(turn: Double) {
-        drive.arcadeDrive(currentForward, turn)
     }
 
     fun tank(left: Double, right: Double, squareInputs: Boolean) {

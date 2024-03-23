@@ -1,4 +1,6 @@
-package frc.robot
+package frc.autonomous
+
+import frc.robot.Robot
 
 /**
  * [AutonomousRoutine] is the interface to implement autonomous code

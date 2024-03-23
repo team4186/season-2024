@@ -4,6 +4,7 @@ import edu.wpi.first.math.util.Units
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
+import kotlin.math.roundToInt
 import kotlin.math.tan
 
 class LimelightRunner(
@@ -71,32 +72,8 @@ class LimelightRunner(
         tableRing.getEntry("ledMode").setValue(if (mode) 3.0 else 1.0)
     }
 
-    fun lookupTableRound(distanceToTag: Double): Int {
-        val roundedNum = ((distanceToTag - 36.37) / 12.0)
-        when {
-            roundedNum > 12.0 -> return 11
-            roundedNum < 12.0 && roundedNum >= 11.0 -> return 11
-            roundedNum < 11.0 && roundedNum >= 10.0 -> return 11
-            roundedNum < 10.0 && roundedNum >= 9.5 -> return 10
-            roundedNum < 9.5 && roundedNum >= 9.0 -> return 9
-            roundedNum < 9.0 && roundedNum >= 8.5 -> return 9
-            roundedNum < 8.5 && roundedNum >= 8.0 -> return 8
-            roundedNum < 8.0 && roundedNum >= 7.5 -> return 8
-            roundedNum < 7.5 && roundedNum >= 7.0 -> return 7
-            roundedNum < 7.0 && roundedNum >= 6.5 -> return 7
-            roundedNum < 6.5 && roundedNum >= 6.0 -> return 6
-            roundedNum < 6.0 && roundedNum >= 5.5 -> return 6
-            roundedNum < 5.5 && roundedNum >= 5.0 -> return 5
-            roundedNum < 5.0 && roundedNum >= 4.5 -> return 5
-            roundedNum < 4.5 && roundedNum >= 4.0 -> return 4
-            roundedNum < 4.0 && roundedNum >= 3.5 -> return 4
-            roundedNum < 3.5 && roundedNum >= 3.0 -> return 3
-            roundedNum < 3.0 && roundedNum >= 2.5 -> return 3
-            roundedNum < 2.5 && roundedNum >= 2.0 -> return 2
-            roundedNum < 2.0 && roundedNum >= 1.5 -> return 2
-            roundedNum < 1.5 && roundedNum >= 1.0 -> return 1
-            roundedNum < 1.0 && roundedNum >= 0.5 -> return 1
-            else -> return 0
-        }
-    }
+    fun lookupTableRound(distanceToTag: Double): Int =
+        ((distanceToTag - 36.37) / 12.0)
+            .roundToInt()
+            .coerceIn(0, 11)
 }

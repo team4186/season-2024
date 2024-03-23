@@ -1,4 +1,4 @@
-package frc.robot
+package frc.actions
 
 import edu.wpi.first.math.controller.PIDController
 import frc.subsystems.DriveTrainSubsystem
@@ -32,6 +32,7 @@ fun alignToTarget(
     if (!vision.hasTargetTag) {
         // stop the motors if not seeing the tag
         drive.stop()
+        turnController.reset()
         return false
     }
     drive.arcade(
