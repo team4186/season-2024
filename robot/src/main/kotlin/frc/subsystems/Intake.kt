@@ -15,11 +15,12 @@ class Intake(
         intake.set(-0.5)
     }
 
-    fun collect() {
+    fun collect() : Boolean {
         when {
             hasSomething -> intake.stopMotor()
             else -> intake.set(-0.65)
         }
+        return hasSomething
     }
 
     fun eject() {

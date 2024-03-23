@@ -49,11 +49,7 @@ class Arm(
 
     fun moveUp(speed: Double = DEFAULT_FREE_MOVE_SPEED) {
         when {
-            isAtTop -> {
-                stopMotor()
-                motor.encoder.setPosition(0.25)
-                // TODO set `encoder`?
-            }
+            isAtTop -> stopMotor()
 
             else -> motor.set(speed)
         }
