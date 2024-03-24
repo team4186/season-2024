@@ -9,19 +9,22 @@ data class AngleAndSpeed(
 
 private val DefaultAngleAndSpeed = AngleAndSpeed(17.9, 0.0)
 
+const val MAX_SPEED = 5000
+const val TEST_SPEED = MAX_SPEED * 0.20
+
 private val lookupArray = arrayOf(
-    AngleAndSpeed(17.0, -0.70),
-    AngleAndSpeed(17.0, -0.70),
-    AngleAndSpeed(21.0, -0.70),
-    AngleAndSpeed(26.0, -0.70),
-    AngleAndSpeed(28.0, -0.70),
-    AngleAndSpeed(30.0, -0.70),
-    AngleAndSpeed(32.0, -0.70),
-    AngleAndSpeed(34.0, -0.75),
-    AngleAndSpeed(37.0, -0.75),
-    AngleAndSpeed(37.0, -0.80),
-    AngleAndSpeed(38.5, -0.80),
-    AngleAndSpeed(38.7, -0.85)
+    AngleAndSpeed(17.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(17.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(21.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(26.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(28.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(30.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(32.0, 0.70 * MAX_SPEED),
+    AngleAndSpeed(37.0, 0.75 * MAX_SPEED),
+    AngleAndSpeed(34.0, 0.75 * MAX_SPEED),
+    AngleAndSpeed(37.0, 0.80 * MAX_SPEED),
+    AngleAndSpeed(38.5, 0.80 * MAX_SPEED),
+    AngleAndSpeed(38.7, 0.85 * MAX_SPEED)
 )
 
 fun findLaunchAngleAndSpeed(

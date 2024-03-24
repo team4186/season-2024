@@ -84,6 +84,7 @@ class Robot : TimedRobot() {
     }
 
     override fun robotPeriodic() {
+        report()
     }
 
     override fun autonomousInit() {
@@ -134,17 +135,12 @@ class Robot : TimedRobot() {
         // Waiting for the arm to reset
         if (resetArm(arm)) return
 
-        SmartDashboard.putNumber("Launcher Speed", launcher.speed)
-        SmartDashboard.putNumber("Launcher Motor Encoder", arm.position)
-        SmartDashboard.putBoolean("Bottom Limit", arm.isAtBottom)
-        SmartDashboard.putBoolean("Top Limit", arm.isAtTop)
-
         val (desiredAngle, lookUpSpeed) = findLaunchAngleAndSpeed(limelightRunner)
 
         when {
-            checkButton(1) -> launch(intake, launcher, lookUpSpeed + 0.01, lookUpSpeed)
+            checkButton(1) -> launch(intake, launcher, lookUpSpeed)
             checkButton(2) -> intake.collect()
-            checkButton(10) -> launch(intake, launcher, -0.20 + 0.01, -0.20)
+            checkButton(10) -> launch(intake, launcher, TEST_SPEED)
             checkButton(11) -> intake.eject()
             else -> {
                 launcher.stopMotor()
@@ -157,7 +153,7 @@ class Robot : TimedRobot() {
             checkButton(4) -> arm.moveDown()
             checkButton(5) -> arm.move(to = desiredAngle)
             checkButton(6) -> arm.move(to = 0.0)
-            checkButton(7) -> arm.move(to = 92.0)
+            checkButton(7) -> arm.move(to = 90.9)
             checkButton(8) -> arm.move(to = 170.0)
             else -> arm.move(to = 17.9)
         }
@@ -171,13 +167,17 @@ class Robot : TimedRobot() {
     }
 
     override fun testPeriodic() {
-        SmartDashboard.putNumber("Launcher Speed", launcher.speed)
-        SmartDashboard.putNumber("Launcher Motor Encoder", arm.position)
-        SmartDashboard.putBoolean("Bottom Limit", arm.isAtBottom)
-        SmartDashboard.putBoolean("Top Limit", arm.isAtTop)
-        SmartDashboard.putBoolean("Intake Limit", intake.hasSomething)
+
     }
 
     override fun disabledPeriodic() {
+    }
+
+    private fun report() {
+        SmartDashboard.putNumber("Launcher Speed", launcher.speed)
+        SmartDashboard.putNumber("Arm position", arm.position)
+        SmartDashboard.putBoolean("Is Arm At Bottom", arm.isAtBottom)
+        SmartDashboard.putBoolean("Is Arm At Top", arm.isAtTop)
+        SmartDashboard.putBoolean("Something in Intake", intake.hasSomething)
     }
 }

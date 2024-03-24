@@ -1,5 +1,6 @@
 package frc.autonomous
 
+import frc.actions.MAX_SPEED
 import frc.actions.launch
 import frc.actions.resetArm
 import frc.robot.Robot
@@ -42,7 +43,7 @@ class SingleNoteRoutine : AutonomousRoutine {
                 when {
                     robot.intake.hasSomething -> {
                         robot.arm.move(to = 17.0)
-                        launch(robot.intake, robot.launcher, -0.70 + 0.01, -0.70)
+                        launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED)
                     }
 
                     else -> {

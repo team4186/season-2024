@@ -10,8 +10,8 @@ class Launcher(
 ) : SubsystemBase() {
     inline val speed: Double get() = motor.encoder.velocity
 
-    fun speed(to: Double): Boolean {
-        motor.set(to)
+    fun accelerate(to: Double): Boolean {
+        motor.pidController.setReference(to, CANSparkBase.ControlType.kVelocity)
         return speed.absoluteValue >= to.absoluteValue
     }
 
@@ -24,7 +24,7 @@ class Launcher(
 fun launcherSparkMaxMotors(
     lead: CANSparkMax,
     follower0: CANSparkMax,
-    inverted: Boolean = false
+    inverted: Boolean = true
 ): CANSparkMax {
     follower0.follow(lead)
 
@@ -33,7 +33,7 @@ fun launcherSparkMaxMotors(
     lead.idleMode = CANSparkBase.IdleMode.kCoast
     follower0.idleMode = CANSparkBase.IdleMode.kCoast
 
-    lead.pidController.i = 0.0000033
+    lead.pidController.i = 0.00000033
 
     return lead
 }

@@ -1,9 +1,6 @@
 package frc.autonomous
 
-import frc.actions.findLaunchAngleAndSpeed
-import frc.actions.launch
-import frc.actions.moveArm
-import frc.actions.resetArm
+import frc.actions.*
 import frc.robot.Robot
 
 /*
@@ -45,7 +42,7 @@ class TwoNotesRoutine : AutonomousRoutine {
                 when {
                     robot.intake.hasSomething -> {
                         if (moveArm(robot.arm, 17.0)) {
-                            launch(robot.intake, robot.launcher, -0.70 + 0.01, -0.70)
+                            launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED)
                         }
                     }
 
@@ -76,7 +73,7 @@ class TwoNotesRoutine : AutonomousRoutine {
                 if (robot.intake.hasSomething) {
                     val (desiredAngle, lookUpSpeed) = findLaunchAngleAndSpeed(robot.limelightRunner)
                     if (moveArm(robot.arm, desiredAngle)) {
-                        launch(robot.intake, robot.launcher, lookUpSpeed + 0.01, lookUpSpeed)
+                        launch(robot.intake, robot.launcher, lookUpSpeed)
                     }
                 } else {
                     robot.launcher.stopMotor()
