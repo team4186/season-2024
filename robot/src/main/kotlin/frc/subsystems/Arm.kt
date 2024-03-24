@@ -29,7 +29,7 @@ class Arm(
     fun reset() {
         pid.reset()
         encoder.reset()
-        encoder.distancePerPulse = 5.670
+        encoder.distancePerPulse = 1/5.670
         needReset = true
     }
 
