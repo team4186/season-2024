@@ -170,6 +170,14 @@ class Robot : TimedRobot() {
     override fun testInit() {
     }
 
+    override fun testPeriodic() {
+        SmartDashboard.putNumber("Launcher Speed", launcher.speed)
+        SmartDashboard.putNumber("Launcher Motor Encoder", arm.position)
+        SmartDashboard.putBoolean("Bottom Limit", arm.isAtBottom)
+        SmartDashboard.putBoolean("Top Limit", arm.isAtTop)
+        SmartDashboard.putBoolean("Intake Limit", intake.hasSomething)
+    }
+
     override fun disabledPeriodic() {
     }
 }
