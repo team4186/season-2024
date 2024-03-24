@@ -8,8 +8,8 @@ import edu.wpi.first.wpilibj.Encoder
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import kotlin.math.absoluteValue
 
-private const val DEFAULT_FREE_MOVE_SPEED: Double = 0.35
-private const val DEFAULT_SETPOINT_THRESHOLD: Double = 1e-5
+const val DEFAULT_FREE_MOVE_SPEED: Double = 0.35
+const val DEFAULT_SETPOINT_THRESHOLD: Double = 1e-5
 
 class Arm(
     val bottomLimit: DigitalInput,
@@ -64,7 +64,7 @@ class Arm(
                 needReset = false
             }
 
-            else -> motor.set(-speed)
+            else -> motor.set(speed)
         }
     }
 
@@ -79,9 +79,8 @@ fun armSparkMaxMotors(
     follower0: CANSparkMax,
     inverted: Boolean = false
 ): CANSparkMax {
-    follower0.follow(lead)
+    follower0.follow(lead, !inverted)
 
-    follower0.inverted = !inverted
     lead.inverted = inverted
 
     lead.idleMode = CANSparkBase.IdleMode.kBrake

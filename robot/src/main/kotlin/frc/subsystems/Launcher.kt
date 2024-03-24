@@ -28,7 +28,6 @@ fun launcherSparkMaxMotors(
 ): CANSparkMax {
     follower0.follow(lead)
 
-    follower0.inverted = inverted
     lead.inverted = inverted
 
     lead.idleMode = CANSparkBase.IdleMode.kCoast
