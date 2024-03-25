@@ -45,7 +45,7 @@ class Robot : TimedRobot() {
             CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless),
         ),
         pid = PIDController(
-            0.005,
+            0.015,
             0.0,
             0.0
         )
@@ -136,6 +136,8 @@ class Robot : TimedRobot() {
         if (resetArm(arm)) return
 
         val (desiredAngle, lookUpSpeed) = findLaunchAngleAndSpeed(limelightRunner)
+        SmartDashboard.putNumber("Desired angle", desiredAngle)
+        SmartDashboard.putNumber("Desired launch speed", lookUpSpeed)
 
         when {
             checkButton(1) -> launch(intake, launcher, lookUpSpeed)
@@ -155,7 +157,7 @@ class Robot : TimedRobot() {
             checkButton(6) -> arm.move(to = 0.0)
             checkButton(7) -> arm.move(to = 90.9)
             checkButton(8) -> arm.move(to = 170.0)
-            else -> arm.move(to = 17.9)
+            else -> arm.move(to = 0.0)
         }
 
     }

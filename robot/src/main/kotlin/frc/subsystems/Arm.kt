@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.Encoder
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import kotlin.math.absoluteValue
 
-const val DEFAULT_FREE_MOVE_SPEED: Double = 0.35
+const val DEFAULT_FREE_MOVE_SPEED: Double = 0.7
 const val DEFAULT_SETPOINT_THRESHOLD: Double = 1e-5
 
 class Arm(
