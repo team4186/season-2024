@@ -34,7 +34,7 @@ class ArmTest {
 
         val subject = Arm(bottomLimit, topLimit, encoder, motor, pid)
 
-        subject.reset()
+        subject.init()
 
         assertTrue(resetArm(subject))
         verifyOrder {

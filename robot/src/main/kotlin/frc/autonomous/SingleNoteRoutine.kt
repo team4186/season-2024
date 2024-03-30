@@ -1,5 +1,6 @@
 package frc.autonomous
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import frc.actions.MAX_SPEED
 import frc.actions.launch
 import frc.actions.resetArm
@@ -23,6 +24,7 @@ class SingleNoteRoutine : AutonomousRoutine {
 
     override fun init(robot: Robot) {
         autoState = AutoSequence.RESETARM
+        robot.arm.init()
     }
 
     override fun exit(robot: Robot) {
@@ -32,9 +34,10 @@ class SingleNoteRoutine : AutonomousRoutine {
     }
 
     override fun periodic(robot: Robot) {
+        SmartDashboard.putString("Auto state", autoState.name)
         when (autoState) {
             AutoSequence.RESETARM -> {
-                if (resetArm(robot.arm)) {
+                if (!resetArm(robot.arm)) {
                     autoState = AutoSequence.SHOOTPRELOAD
                 }
             }
@@ -42,21 +45,22 @@ class SingleNoteRoutine : AutonomousRoutine {
             AutoSequence.SHOOTPRELOAD -> {
                 when {
                     robot.intake.hasSomething -> {
-                        robot.arm.move(to = 17.0)
-                        launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED)
+                        if (robot.arm.move(to = 17.0, threshold = -2.5..0.0)) {
+                            launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED)
+                        }
                     }
 
                     else -> {
-                        robot.launcher.stopMotor()
                         autoState = AutoSequence.STOP
                     }
                 }
             }
 
             AutoSequence.STOP -> {
-                robot.arm.stopMotor()
+                robot.intake.stopMotor()
                 robot.launcher.stopMotor()
                 robot.driveTrain.stop()
+                robot.arm.stopMotor()
             }
         }
     }

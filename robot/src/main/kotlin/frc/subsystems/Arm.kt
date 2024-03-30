@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.Encoder
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import kotlin.math.absoluteValue
 
-const val DEFAULT_FREE_MOVE_SPEED: Double = 0.7
+const val DEFAULT_FREE_MOVE_SPEED: Double = 0.4
 const val DEFAULT_SETPOINT_THRESHOLD: Double = 1e-5
 
 class Arm(
@@ -26,14 +26,17 @@ class Arm(
     var needReset: Boolean = true
         private set
 
-    fun reset() {
+    fun init() {
         pid.reset()
         encoder.reset()
-        encoder.distancePerPulse = 1/5.670
+        encoder.distancePerPulse = 1 / 5.670
         needReset = true
     }
 
-    fun move(to: Double, threshold: Double = DEFAULT_SETPOINT_THRESHOLD): Boolean {
+    fun move(
+        to: Double,
+        threshold: ClosedRange<Double> = -DEFAULT_SETPOINT_THRESHOLD..DEFAULT_SETPOINT_THRESHOLD
+    ): Boolean {
         val speed = pid
             .calculate(position, to)
             .coerceIn(-DEFAULT_FREE_MOVE_SPEED, DEFAULT_FREE_MOVE_SPEED)
@@ -44,7 +47,7 @@ class Arm(
             else -> motor.stopMotor()
         }
 
-        return (to - position).absoluteValue <= threshold
+        return (position - to) in threshold
     }
 
     fun moveUp(speed: Double = DEFAULT_FREE_MOVE_SPEED) {
@@ -59,7 +62,6 @@ class Arm(
         when {
             isAtBottom -> {
                 stopMotor()
-                motor.encoder.setPosition(0.0)
                 encoder.reset()
                 needReset = false
             }

@@ -16,11 +16,6 @@ import frc.vision.LimelightRunner
 class Robot : TimedRobot() {
     private val joystick0 = Joystick(0) //drive joystick
     private val joystick1 = Joystick(1) //operator joystick
-    private val ledBuffer = AddressableLEDBuffer(20)
-//    private val led = AddressableLED(9).apply {
-//        setLength(ledBuffer.length)
-//        setData(ledBuffer)
-//    }
 
 
     val driveTrain = DriveTrainSubsystem(
@@ -61,6 +56,10 @@ class Robot : TimedRobot() {
             CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless),
             CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless),
         )
+    )
+
+    val leds = Leds(
+        port = 9,
     )
 
     internal val limelightRunner = LimelightRunner()
@@ -104,8 +103,9 @@ class Robot : TimedRobot() {
     }
 
     override fun teleopInit() {
-        arm.reset()
+        arm.init()
         driveTrain.setToCoast()
+        leds.init()
     }
 
     override fun teleopPeriodic() {
@@ -130,7 +130,12 @@ class Robot : TimedRobot() {
             }
         }
 
-        // TODO use the `isTagOnTarget` to light up the LEDs
+        leds.lightUp(
+            when {
+                isTagOnTarget -> Leds.Color.Green
+                else -> Leds.Color.Red
+            }
+        )
 
         // Waiting for the arm to reset
         if (resetArm(arm)) return
@@ -155,7 +160,7 @@ class Robot : TimedRobot() {
             checkButton(4) -> arm.moveDown()
             checkButton(5) -> arm.move(to = desiredAngle)
             checkButton(6) -> arm.move(to = 0.0)
-            checkButton(7) -> arm.move(to = 90.9)
+            checkButton(7) -> arm.move(to = 90.0)
             checkButton(8) -> arm.move(to = 170.0)
             else -> arm.move(to = 0.0)
         }
