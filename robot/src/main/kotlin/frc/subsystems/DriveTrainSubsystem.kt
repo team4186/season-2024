@@ -29,6 +29,12 @@ class DriveTrainSubsystem(
     fun initialize() {
         drive.stopMotor()
         drive.isSafetyEnabled = false
+        zeroEncoders()
+    }
+
+    fun zeroEncoders() {
+        leftMotor.encoder.position = 0.0
+        rightMotor.encoder.position = 0.0
     }
 
     fun stop() {

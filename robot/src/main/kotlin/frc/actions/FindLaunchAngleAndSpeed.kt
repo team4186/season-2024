@@ -34,7 +34,6 @@ fun findLaunchAngleAndSpeed(
         limelight.hasTargetTag -> {
             val distanceToTag = limelight.distance
             val roundedDistance = limelight.lookupTableRound(distanceToTag)
-            println("roundedDistance: $roundedDistance")
             lookupArray[roundedDistance]
         }
 

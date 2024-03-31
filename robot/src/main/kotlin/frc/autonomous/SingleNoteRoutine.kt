@@ -45,7 +45,7 @@ class SingleNoteRoutine : AutonomousRoutine {
             AutoSequence.SHOOTPRELOAD -> {
                 when {
                     robot.intake.hasSomething -> {
-                        if (robot.arm.move(to = 17.0, threshold = -2.5..0.0)) {
+                        if (robot.arm.move(to = 17.0)) {
                             launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED)
                         }
                     }

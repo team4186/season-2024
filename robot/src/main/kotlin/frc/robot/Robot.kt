@@ -171,6 +171,7 @@ class Robot : TimedRobot() {
     }
 
     override fun testInit() {
+        driveTrain.initialize()
     }
 
     override fun testPeriodic() {
@@ -186,5 +187,7 @@ class Robot : TimedRobot() {
         SmartDashboard.putBoolean("Is Arm At Bottom", arm.isAtBottom)
         SmartDashboard.putBoolean("Is Arm At Top", arm.isAtTop)
         SmartDashboard.putBoolean("Something in Intake", intake.hasSomething)
+        SmartDashboard.putNumber("Drive right distance", driveTrain.rightMotor.encoder.position)
+        SmartDashboard.putNumber("Drive left distance", driveTrain.leftMotor.encoder.position)
     }
 }

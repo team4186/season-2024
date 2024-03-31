@@ -6,10 +6,9 @@ import edu.wpi.first.math.controller.PIDController
 import edu.wpi.first.wpilibj.DigitalInput
 import edu.wpi.first.wpilibj.Encoder
 import edu.wpi.first.wpilibj2.command.SubsystemBase
-import kotlin.math.absoluteValue
 
 const val DEFAULT_FREE_MOVE_SPEED: Double = 0.4
-const val DEFAULT_SETPOINT_THRESHOLD: Double = 1e-5
+const val DEFAULT_SETPOINT_THRESHOLD: Double = 2.5
 
 class Arm(
     val bottomLimit: DigitalInput,
@@ -35,7 +34,7 @@ class Arm(
 
     fun move(
         to: Double,
-        threshold: ClosedRange<Double> = -DEFAULT_SETPOINT_THRESHOLD..DEFAULT_SETPOINT_THRESHOLD
+        threshold: ClosedRange<Double> = -DEFAULT_SETPOINT_THRESHOLD..0.0
     ): Boolean {
         val speed = pid
             .calculate(position, to)
