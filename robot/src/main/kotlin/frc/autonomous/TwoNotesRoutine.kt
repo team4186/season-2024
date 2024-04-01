@@ -50,9 +50,8 @@ class TwoNotesRoutine : AutonomousRoutine {
             AutoSequence.SHOOTPRELOAD -> {
                 when {
                     robot.intake.hasSomething -> {
-                        if (robot.arm.move(to = 17.0)) {
-                            launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED)
-                        }
+                        val inPosition = robot.arm.move(to = 17.0)
+                        launch(robot.intake, robot.launcher, 0.70 * MAX_SPEED, true, inPosition)
                     }
 
                     else -> {
@@ -85,9 +84,8 @@ class TwoNotesRoutine : AutonomousRoutine {
                 if (robot.intake.hasSomething) {
                     wait = Duration.ZERO
                     val (desiredAngle, lookUpSpeed) = findLaunchAngleAndSpeed(robot.limelightRunner)
-                    if (moveArm(robot.arm, desiredAngle + 2.0)) {
-                        launch(robot.intake, robot.launcher, lookUpSpeed)
-                    }
+                    val inPosition = moveArm(robot.arm, desiredAngle + 2.0)
+                    launch(robot.intake, robot.launcher, lookUpSpeed, true, inPosition)
                 } else {
                     wait += TICK
                     if (wait > 0.5.seconds) {

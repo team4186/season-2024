@@ -4,9 +4,11 @@ import edu.wpi.first.wpilibj.AddressableLED
 import edu.wpi.first.wpilibj.AddressableLEDBuffer
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 
+//TODO Reduce brightness of LEDs
+
 class Leds(
     port: Int,
-    private val length: Int = 20
+    private val length: Int = 32
 ) : SubsystemBase() {
     private val ledBuffer = AddressableLEDBuffer(length)
     private val led = AddressableLED(port).apply {

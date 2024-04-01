@@ -19,47 +19,52 @@ class Robot : TimedRobot() {
 
 
     val driveTrain = DriveTrainSubsystem(
-        leftMotor = driveSparkMaxMotors(
-            CANSparkMax(8, CANSparkLowLevel.MotorType.kBrushless),
-            CANSparkMax(9, CANSparkLowLevel.MotorType.kBrushless),
-            inverted = true,
-        ),
-        rightMotor = driveSparkMaxMotors(
-            CANSparkMax(11, CANSparkLowLevel.MotorType.kBrushless),
-            CANSparkMax(10, CANSparkLowLevel.MotorType.kBrushless),
-            inverted = false,
-        )
+            leftMotor = driveSparkMaxMotors(
+                    CANSparkMax(8, CANSparkLowLevel.MotorType.kBrushless),
+                    CANSparkMax(9, CANSparkLowLevel.MotorType.kBrushless),
+                    inverted = true,
+            ),
+            rightMotor = driveSparkMaxMotors(
+                    CANSparkMax(11, CANSparkLowLevel.MotorType.kBrushless),
+                    CANSparkMax(10, CANSparkLowLevel.MotorType.kBrushless),
+                    inverted = false,
+            )
     )
 
     val arm = Arm(
-        bottomLimit = DigitalInput(0),
-        topLimit = DigitalInput(1),
-        encoder = Encoder(5, 6, true, CounterBase.EncodingType.k1X),
-        motor = armSparkMaxMotors(
-            CANSparkMax(20, CANSparkLowLevel.MotorType.kBrushless),
-            CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless),
-        ),
-        pid = PIDController(
-            0.015,
-            0.0,
-            0.0
-        )
+            bottomLimit = DigitalInput(0),
+            topLimit = DigitalInput(1),
+            encoder = Encoder(5, 6, true, CounterBase.EncodingType.k1X),
+            motor = armSparkMaxMotors(
+                    CANSparkMax(20, CANSparkLowLevel.MotorType.kBrushless),
+                    CANSparkMax(21, CANSparkLowLevel.MotorType.kBrushless),
+            ),
+            pid = PIDController(
+                    0.015,
+                    0.0,
+                    0.0
+            )
     )
 
     val intake = Intake(
-        CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless),
-        DigitalInput(4),
+            CANSparkMax(13, CANSparkLowLevel.MotorType.kBrushless),
+            DigitalInput(4),
     )
 
     val launcher = Launcher(
-        launcherSparkMaxMotors(
-            CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless),
-            CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless),
-        )
+            launcherSparkMaxMotors(
+                    CANSparkMax(12, CANSparkLowLevel.MotorType.kBrushless),
+                    CANSparkMax(15, CANSparkLowLevel.MotorType.kBrushless),
+            )
+    )
+
+    val climber = Climber(
+            DigitalInput(3),
+            CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushless),
     )
 
     val leds = Leds(
-        port = 9,
+            port = 9,
     )
 
     internal val limelightRunner = LimelightRunner()
@@ -79,11 +84,21 @@ class Robot : TimedRobot() {
 
             SmartDashboard.putData("Autonomous Mode", this)
         }
-
+        SmartDashboard.putNumber("Override Angle Please", 0.0)
+        SmartDashboard.putNumber("Override Speed", 0.0)
     }
 
     override fun robotPeriodic() {
         report()
+
+        val isTagOnTarget = with(limelightRunner) { hasTargetTag && tagxOffset in -10.0..10.0}
+
+        leds.lightUp(
+                when {
+                    isTagOnTarget -> Leds.Color.Green
+                    else -> Leds.Color.Red
+                }
+        )
     }
 
     override fun autonomousInit() {
@@ -111,31 +126,23 @@ class Robot : TimedRobot() {
     override fun teleopPeriodic() {
         fun checkButton(id: Int) = joystick0.getRawButton(id) || joystick1.getRawButton(id)
 
-        val isTagOnTarget = when {
+      when {
             checkButton(12) -> alignToTarget(
-                forward = 0.5,
-                turnController = SpeakerTurnPid,
-                drive = driveTrain,
-                vision = limelightRunner,
-                offset = 0.0
+                    forward = 0.5,
+                    turnController = SpeakerTurnPid,
+                    drive = driveTrain,
+                    vision = limelightRunner,
+                    offset = 0.0
             )
 
             else -> {
                 manualDrive(
-                    forward = joystick0.y,
-                    turn = joystick0.twist,
-                    drive = driveTrain
+                        forward = joystick0.y,
+                        turn = joystick0.twist,
+                        drive = driveTrain
                 )
-                false
             }
         }
-
-        leds.lightUp(
-            when {
-                isTagOnTarget -> Leds.Color.Green
-                else -> Leds.Color.Red
-            }
-        )
 
         // Waiting for the arm to reset
         if (resetArm(arm)) return
@@ -144,26 +151,44 @@ class Robot : TimedRobot() {
         SmartDashboard.putNumber("Desired angle", desiredAngle)
         SmartDashboard.putNumber("Desired launch speed", lookUpSpeed)
 
+        val overrideAngle = SmartDashboard.getNumber("Override Angle Please", 0.0)
+        val overrideSpeed = SmartDashboard.getNumber("Override Speed", 0.0)
+
         when {
-            checkButton(1) -> launch(intake, launcher, lookUpSpeed)
+            checkButton(1) -> {
+                val inPosition = arm.move(to = desiredAngle)
+                launch(intake, launcher, lookUpSpeed, keepRunning = true, inPosition)
+            }
+
             checkButton(2) -> intake.collect()
-            checkButton(10) -> launch(intake, launcher, TEST_SPEED)
+            checkButton(4) -> arm.moveDown()
+
+            checkButton(7) -> climber.moveDown()
+            checkButton(8) -> climber.moveUp()
+
+            checkButton(10) -> {
+                val inPosition = arm.move(to = overrideAngle)
+                launch(intake, launcher, overrideSpeed, keepRunning = true, inPosition)
+            }
+
             checkButton(11) -> intake.eject()
             else -> {
                 launcher.stopMotor()
                 intake.stopMotor()
+                climber.stopMotor()
+                arm.move(to = 0.0)
             }
+
         }
 
-        when {
-            checkButton(3) -> arm.moveUp()
-            checkButton(4) -> arm.moveDown()
-            checkButton(5) -> arm.move(to = desiredAngle)
-            checkButton(6) -> arm.move(to = 0.0)
-            checkButton(7) -> arm.move(to = 90.0)
-            checkButton(8) -> arm.move(to = 170.0)
-            else -> arm.move(to = 0.0)
-        }
+//        when {
+//            checkButton(3) -> arm.moveUp()
+//            checkButton(5) -> arm.move(to = desiredAngle)
+//            checkButton(6) -> arm.move(to = 0.0)
+//            checkButton(7) -> arm.move(to = 90.0)
+//            checkButton(8) -> arm.move(to = 170.0)
+//            else -> arm.move(to = 0.0)
+//        }
 
     }
 
@@ -172,6 +197,7 @@ class Robot : TimedRobot() {
 
     override fun testInit() {
         driveTrain.initialize()
+        climber.motor.encoder.position = 0.0
     }
 
     override fun testPeriodic() {
@@ -189,5 +215,18 @@ class Robot : TimedRobot() {
         SmartDashboard.putBoolean("Something in Intake", intake.hasSomething)
         SmartDashboard.putNumber("Drive right distance", driveTrain.rightMotor.encoder.position)
         SmartDashboard.putNumber("Drive left distance", driveTrain.leftMotor.encoder.position)
+        SmartDashboard.putNumber("Climber Position", climber.position)
+        SmartDashboard.putBoolean("Climber is at Bottom", climber.isAtBottom)
+        SmartDashboard.putString(
+                "Tag distance",
+                limelightRunner
+                        .distance
+                        .let {
+                            when {
+                                it.isNaN() -> "NaN"
+                                else -> limelightRunner.lookupTableRound(it).toString()
+                            }
+                        }
+        )
     }
 }
