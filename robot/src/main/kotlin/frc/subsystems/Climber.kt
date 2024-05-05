@@ -6,7 +6,7 @@ import edu.wpi.first.math.controller.PIDController
 import edu.wpi.first.wpilibj.DigitalInput
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 
-const val DEFAULT_FREE_CLIMBER_SPEED: Double = 0.4
+const val DEFAULT_FREE_CLIMBER_SPEED: Double = 0.7
 const val TOP_EXTENSION: Double = -107.6
 
 class Climber(

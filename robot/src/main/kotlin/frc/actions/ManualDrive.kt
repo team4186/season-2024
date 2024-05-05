@@ -13,7 +13,7 @@ fun manualDrive(
 ) {
     drive.arcade(
         attenuated(direction * forward),
-        attenuated(direction * -0.8 * turn),
+        attenuated(direction * -0.75 * turn),
         squareInputs = true,
     )
 }

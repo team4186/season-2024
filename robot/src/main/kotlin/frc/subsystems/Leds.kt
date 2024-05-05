@@ -29,6 +29,7 @@ class Leds(
 
     enum class Color(val r: Int, val g: Int, val b: Int) {
         Red(255, 0, 0),
-        Green(0, 255, 0)
+        Green(0, 255, 0),
+        Blue(0,0,255)
     }
 }

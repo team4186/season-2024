@@ -3,6 +3,7 @@ package frc.robot
 import com.revrobotics.CANSparkLowLevel
 import com.revrobotics.CANSparkMax
 import edu.wpi.first.math.controller.PIDController
+import edu.wpi.first.units.Units
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
@@ -64,7 +65,7 @@ class Robot : TimedRobot() {
     )
 
     val leds = Leds(
-            port = 9,
+            port = 0,
     )
 
     internal val limelightRunner = LimelightRunner()
@@ -86,16 +87,18 @@ class Robot : TimedRobot() {
         }
         SmartDashboard.putNumber("Override Angle Please", 0.0)
         SmartDashboard.putNumber("Override Speed", 0.0)
+        SmartDashboard.putNumber("Change Angle", 0.0)
     }
 
     override fun robotPeriodic() {
         report()
 
-        val isTagOnTarget = with(limelightRunner) { hasTargetTag && tagxOffset in -10.0..10.0}
+        val isTagOnTarget = with(limelightRunner) { hasTargetTag && tagxOffset in -10.0..10.0 }
 
         leds.lightUp(
                 when {
                     isTagOnTarget -> Leds.Color.Green
+                    intake.hasSomething -> Leds.Color.Blue
                     else -> Leds.Color.Red
                 }
         )
@@ -123,12 +126,13 @@ class Robot : TimedRobot() {
         leds.init()
     }
 
+    var restAngle = 0.0
     override fun teleopPeriodic() {
         fun checkButton(id: Int) = joystick0.getRawButton(id) || joystick1.getRawButton(id)
 
-      when {
+        when {
             checkButton(12) -> alignToTarget(
-                    forward = 0.5,
+                    forward = joystick0.y,
                     turnController = SpeakerTurnPid,
                     drive = driveTrain,
                     vision = limelightRunner,
@@ -155,20 +159,39 @@ class Robot : TimedRobot() {
         val overrideSpeed = SmartDashboard.getNumber("Override Speed", 0.0)
 
         when {
+            joystick0.pov == 0 -> restAngle = 55.0
+            joystick0.pov == 180 -> restAngle = 0.0
+        }
+
+        SmartDashboard
+                .getNumber("Change Angle", 0.0)
+                .let { angleChange ->
+                    when {
+                        checkButton(6) -> SmartDashboard.putNumber("Change Angle", angleChange + 1)
+                        checkButton(5) -> SmartDashboard.putNumber("Change Angle", angleChange - 1)
+                        else -> Unit
+                    }
+                }
+
+        when {
             checkButton(1) -> {
-                val inPosition = arm.move(to = desiredAngle)
+                val angleChange = SmartDashboard.getNumber("Change Angle", 0.0)
+                val inPosition = arm.move(to = desiredAngle + angleChange)
+
                 launch(intake, launcher, lookUpSpeed, keepRunning = true, inPosition)
             }
 
             checkButton(2) -> intake.collect()
+            checkButton(3) -> arm.moveUp()
             checkButton(4) -> arm.moveDown()
+//            checkButton(5) -> arm.move(to = desiredAngle)
 
             checkButton(7) -> climber.moveDown()
             checkButton(8) -> climber.moveUp()
 
             checkButton(10) -> {
-                val inPosition = arm.move(to = overrideAngle)
-                launch(intake, launcher, overrideSpeed, keepRunning = true, inPosition)
+                val inPosition = arm.move(to = 90.0)
+                launch(intake, launcher, 0.20 * 5000, keepRunning = true, inPosition)
             }
 
             checkButton(11) -> intake.eject()
@@ -176,7 +199,7 @@ class Robot : TimedRobot() {
                 launcher.stopMotor()
                 intake.stopMotor()
                 climber.stopMotor()
-                arm.move(to = 0.0)
+                arm.move(to = restAngle)
             }
 
         }
@@ -215,6 +238,8 @@ class Robot : TimedRobot() {
         SmartDashboard.putBoolean("Something in Intake", intake.hasSomething)
         SmartDashboard.putNumber("Drive right distance", driveTrain.rightMotor.encoder.position)
         SmartDashboard.putNumber("Drive left distance", driveTrain.leftMotor.encoder.position)
+        SmartDashboard.putNumber("Drive right velocity", driveTrain.rightMotor.encoder.velocity)
+        SmartDashboard.putNumber("Drive left velocity", driveTrain.leftMotor.encoder.velocity)
         SmartDashboard.putNumber("Climber Position", climber.position)
         SmartDashboard.putBoolean("Climber is at Bottom", climber.isAtBottom)
         SmartDashboard.putString(

@@ -6,7 +6,7 @@ import frc.vision.LimelightRunner
 
 
 val AmplifierTurnPid = PIDController(0.05, 0.0, 0.0)
-val SpeakerTurnPid = PIDController(0.05, 0.0, 0.0)
+val SpeakerTurnPid = PIDController(0.005, 0.0, 0.0)
 
 /**
  * [alignToTarget] will drive the robot forward in target's direction until
@@ -27,6 +27,7 @@ fun alignToTarget(
     drive: DriveTrainSubsystem,
     vision: LimelightRunner,
     offset: Double = 0.0,
+    direction: Double = -0.3,
 ): Boolean {
     // quick check if the tag is in the camera frustum
     if (!vision.hasTargetTag) {
@@ -36,8 +37,8 @@ fun alignToTarget(
         return false
     }
     drive.arcade(
-        forward,
-        turnController.calculate(vision.tagxOffset + offset),
+        forward * direction,
+        -turnController.calculate(vision.tagxOffset + offset).coerceIn(-0.3, 0.3),
         squareInputs = false
     )
     return turnController.atSetpoint()
