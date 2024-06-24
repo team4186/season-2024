@@ -3,6 +3,7 @@ package frc.actions
 import edu.wpi.first.math.controller.PIDController
 import frc.subsystems.DriveTrainSubsystem
 import frc.vision.LimelightRunner
+import kotlin.math.sign
 
 
 val AmplifierTurnPid = PIDController(0.05, 0.0, 0.0)
@@ -22,12 +23,12 @@ val SpeakerTurnPid = PIDController(0.005, 0.0, 0.0)
  *
  */
 fun alignToTarget(
-    forward: Double,
-    turnController: PIDController,
-    drive: DriveTrainSubsystem,
-    vision: LimelightRunner,
-    offset: Double = 0.0,
-    direction: Double = -0.3,
+        forward: Double,
+        turnController: PIDController,
+        drive: DriveTrainSubsystem,
+        vision: LimelightRunner,
+        offset: Double = 0.0,
+        direction: Double = -0.3,
 ): Boolean {
     // quick check if the tag is in the camera frustum
     if (!vision.hasTargetTag) {
@@ -36,10 +37,12 @@ fun alignToTarget(
         turnController.reset()
         return false
     }
+    turnController.setpoint = 0.0
     drive.arcade(
-        forward * direction,
-        -turnController.calculate(vision.tagxOffset + offset).coerceIn(-0.3, 0.3),
-        squareInputs = false
+            forward * direction,
+            sign(direction) * turnController.calculate(vision.tagxOffset + offset).coerceIn(-0.3, 0.3),
+            squareInputs = false
     )
+
     return turnController.atSetpoint()
 }

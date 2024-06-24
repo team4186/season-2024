@@ -37,7 +37,7 @@ class LimelightRunner(
     val ringyOffset: Double get() = tableRing.getEntry("ty").getDouble(0.0)
     val ringArea: Double get() = tableRing.getEntry("ta").getDouble(0.0)
 
-    val tagxOffset: Double get() = tableTag.getEntry("tx").getDouble(0.0)
+    val tagxOffset: Double get() = tableTag.getEntry("tx").getDouble(0.0) // -29.8 to 29.8 degrees
     val tagyOffset: Double get() = tableTag.getEntry("ty").getDouble(0.0)
     val tagArea: Double get() = tableTag.getEntry("ta").getDouble(0.0)
 

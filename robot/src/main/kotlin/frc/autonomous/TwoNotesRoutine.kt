@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.seconds
  */
 
 class TwoNotesRoutine : AutonomousRoutine {
-    private enum class AutoSequence {
+    enum class AutoSequence {
         RESETARM,
         SHOOTPRELOAD,
         ARMDOWN,
@@ -24,7 +24,8 @@ class TwoNotesRoutine : AutonomousRoutine {
         STOP
     } //MOVEFORWARD needs to intake as well
 
-    private var autoState = AutoSequence.RESETARM
+    var autoState = AutoSequence.RESETARM
+        private set
     private var wait = Duration.ZERO
 
     override fun init(robot: Robot) {
