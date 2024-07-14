@@ -8,17 +8,18 @@ import edu.wpi.first.wpilibj.Encoder
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 
 const val DEFAULT_FREE_MOVE_SPEED: Double = 0.4
+const val DEFAULT_FREE_MOVE_DOWN_SPEED: Double = 0.1
 const val DEFAULT_SETPOINT_THRESHOLD: Double = 2.5
 
 class Arm(
-    val bottomLimit: DigitalInput,
-    val topLimit: DigitalInput,
-    val encoder: Encoder,
-    val motor: CANSparkMax,
-    val pid: PIDController,
+        val bottomLimit: DigitalInput,
+        val topLimit: DigitalInput,
+        val encoder: Encoder,
+        val motor: CANSparkMax,
+        val pid: PIDController,
 ) : SubsystemBase() {
-    inline val isAtTop: Boolean get() = !topLimit.get()
-    inline val isAtBottom: Boolean get() = !bottomLimit.get()
+    inline val isAtTop: Boolean get() = topLimit.get()
+    inline val isAtBottom: Boolean get() = bottomLimit.get()
 
     inline val position: Double get() = encoder.distance
 
@@ -33,12 +34,12 @@ class Arm(
     }
 
     fun move(
-        to: Double,
-        threshold: ClosedRange<Double> = -DEFAULT_SETPOINT_THRESHOLD..0.0
+            to: Double,
+            threshold: ClosedRange<Double> = -DEFAULT_SETPOINT_THRESHOLD..0.0
     ): Boolean {
         val speed = pid
-            .calculate(position, to)
-            .coerceIn(-DEFAULT_FREE_MOVE_SPEED, DEFAULT_FREE_MOVE_SPEED)
+                .calculate(position, to)
+                .coerceIn(-DEFAULT_FREE_MOVE_SPEED, DEFAULT_FREE_MOVE_SPEED)
 
         when {
             speed > 0 -> moveUp(speed)
@@ -57,7 +58,7 @@ class Arm(
         }
     }
 
-    fun moveDown(speed: Double = -DEFAULT_FREE_MOVE_SPEED) {
+    fun moveDown(speed: Double = -DEFAULT_FREE_MOVE_DOWN_SPEED) {
         when {
             isAtBottom -> {
                 stopMotor()
@@ -76,9 +77,9 @@ class Arm(
 }
 
 fun armSparkMaxMotors(
-    lead: CANSparkMax,
-    follower0: CANSparkMax,
-    inverted: Boolean = false
+        lead: CANSparkMax,
+        follower0: CANSparkMax,
+        inverted: Boolean = false
 ): CANSparkMax {
     follower0.follow(lead, !inverted)
 

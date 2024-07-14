@@ -30,6 +30,7 @@ dependencyResolutionManagement {
         maven("https://dev.studica.com/maven/release/2024/")
         maven("https://maven.ctr-electronics.com/release/")
         maven("https://maven.revrobotics.com/")
+        maven("https://www.playingwithfusion.com/frc/maven/")
     }
 }
 

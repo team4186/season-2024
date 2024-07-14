@@ -9,7 +9,7 @@ class Intake(
     val intakeSlot: DigitalInput,
 ) : SubsystemBase() {
 
-    inline val hasSomething: Boolean get() = !intakeSlot.get()
+    inline val hasSomething: Boolean get() = intakeSlot.get()
 
     fun launch() {
         intake.set(-0.5)

@@ -3,7 +3,6 @@ package frc.robot
 import com.revrobotics.CANSparkLowLevel
 import com.revrobotics.CANSparkMax
 import edu.wpi.first.math.controller.PIDController
-import edu.wpi.first.units.Units
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
@@ -85,8 +84,8 @@ class Robot : TimedRobot() {
 
             SmartDashboard.putData("Autonomous Mode", this)
         }
-        SmartDashboard.putNumber("Override Angle Please", 0.0)
-        SmartDashboard.putNumber("Override Speed", 0.0)
+        SmartDashboard.putNumber("Override Angle Please", 17.0)
+        SmartDashboard.putNumber("Override Speed", 0.7 * MAX_SPEED)
         SmartDashboard.putNumber("Change Angle", 0.0)
     }
 
@@ -126,6 +125,8 @@ class Robot : TimedRobot() {
         leds.init()
     }
 
+    var launchButtonWasPressed = false
+    var solution = DefaultAngleAndSpeed
     var restAngle = 0.0
     override fun teleopPeriodic() {
         fun checkButton(id: Int) = joystick0.getRawButton(id) || joystick1.getRawButton(id)
@@ -151,16 +152,14 @@ class Robot : TimedRobot() {
         // Waiting for the arm to reset
         if (resetArm(arm)) return
 
-        val (desiredAngle, lookUpSpeed) = findLaunchAngleAndSpeed(limelightRunner)
-        SmartDashboard.putNumber("Desired angle", desiredAngle)
-        SmartDashboard.putNumber("Desired launch speed", lookUpSpeed)
 
-        val overrideAngle = SmartDashboard.getNumber("Override Angle Please", 0.0)
-        val overrideSpeed = SmartDashboard.getNumber("Override Speed", 0.0)
 
-        when {
-            joystick0.pov == 0 -> restAngle = 55.0
-            joystick0.pov == 180 -> restAngle = 0.0
+        val overrideAngle = SmartDashboard.getNumber("Override Angle Please", 17.0)
+        val overrideSpeed = SmartDashboard.getNumber("Override Speed", 0.7 * MAX_SPEED)
+
+        when (joystick0.pov) {
+            0 -> restAngle = 55.0
+            180 -> restAngle = 0.0
         }
 
         SmartDashboard
@@ -175,16 +174,23 @@ class Robot : TimedRobot() {
 
         when {
             checkButton(1) -> {
+                if(!launchButtonWasPressed) {
+                    solution = findLaunchAngleAndSpeed(limelightRunner)
+                }
                 val angleChange = SmartDashboard.getNumber("Change Angle", 0.0)
-                val inPosition = arm.move(to = desiredAngle + angleChange)
+                val inPosition = arm.move(to = solution.angle + angleChange)
 
-                launch(intake, launcher, lookUpSpeed, keepRunning = true, inPosition)
+                launch(intake, launcher, solution.speed, keepRunning = true, inPosition)
             }
 
             checkButton(2) -> intake.collect()
             checkButton(3) -> arm.moveUp()
             checkButton(4) -> arm.moveDown()
-//            checkButton(5) -> arm.move(to = desiredAngle)
+            checkButton(9) -> {
+                val inPosition = arm.move(to = overrideAngle)
+                launch(intake, launcher, overrideSpeed, keepRunning = true, inPosition)
+            }
+
 
             checkButton(7) -> climber.moveDown()
             checkButton(8) -> climber.moveUp()
@@ -201,18 +207,12 @@ class Robot : TimedRobot() {
                 climber.stopMotor()
                 arm.move(to = restAngle)
             }
-
         }
 
-//        when {
-//            checkButton(3) -> arm.moveUp()
-//            checkButton(5) -> arm.move(to = desiredAngle)
-//            checkButton(6) -> arm.move(to = 0.0)
-//            checkButton(7) -> arm.move(to = 90.0)
-//            checkButton(8) -> arm.move(to = 170.0)
-//            else -> arm.move(to = 0.0)
-//        }
-
+        val (desiredAngle, lookUpSpeed) = solution
+        SmartDashboard.putNumber("Desired angle", desiredAngle)
+        SmartDashboard.putNumber("Desired launch speed", lookUpSpeed)
+        launchButtonWasPressed = checkButton(1)
     }
 
     override fun teleopExit() {

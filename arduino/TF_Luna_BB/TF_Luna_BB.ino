@@ -11,7 +11,7 @@ int notBroken = 28;
 void setup(){
     Serial.begin(115200);  // Initalize serial port
     Wire.begin();           // Initalize Wire library
-    pinMode(LED_BUILTIN, OUTPUT); //initialize the LED to report beam status
+    pinMode(LED_BUILTIN, OUTPUT); //initialize the LED to report beam status1q
     
     pinMode(13, OUTPUT);  //set out the output pin for DIO
 }

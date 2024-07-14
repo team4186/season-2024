@@ -7,7 +7,7 @@ data class AngleAndSpeed(
         val speed: Double,
 )
 
-private val DefaultAngleAndSpeed = AngleAndSpeed(17.9, 0.0)
+val DefaultAngleAndSpeed = AngleAndSpeed(17.9, 0.0)
 
 const val MAX_SPEED = 5000
 const val TEST_SPEED = MAX_SPEED * 0.20
