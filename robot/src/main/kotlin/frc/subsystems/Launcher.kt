@@ -20,7 +20,6 @@ class Launcher(
     }
 }
 
-
 fun launcherSparkMaxMotors(
     lead: CANSparkMax,
     follower0: CANSparkMax,
